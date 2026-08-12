@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  liveposter:
+    image: liveposter:latest
+    build: .
+    container_name: liveposter
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount cache directory for persistent metadata
+      - ./cache:/app/.cache
+      # Mount .env file for configuration (optional - can use environment variables instead)
+      - ./.env:/app/.env:ro
+    environment:
+      # Server Configuration
+      - PORT=3000
+      - NODE_ENV=production
+
+      # Kaleidescape Configuration
+      - KALEIDESCAPE_HOST=${KALEIDESCAPE_HOST:-}
+      - KALEIDESCAPE_PORT=${KALEIDESCAPE_PORT:-10000}
+
+      # Plex Configuration
+      - PLEX_URL=${PLEX_URL:-}
+      - PLEX_TOKEN=${PLEX_TOKEN:-}
+
+      # Jellyfin Configuration
+      - JELLYFIN_URL=${JELLYFIN_URL:-}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+
+      # TMDb Configuration
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
+      - TMDB_READ_TOKEN=${TMDB_READ_TOKEN:-}
+
+      # OMDb Configuration
+      - OMDB_API_KEY=${OMDB_API_KEY:-}
+
+      # Polling Settings
+      - POLL_INTERVAL=${POLL_INTERVAL:-10000}
+      - SLIDESHOW_INTERVAL=${SLIDESHOW_INTERVAL:-10000}
+    network_mode: bridge

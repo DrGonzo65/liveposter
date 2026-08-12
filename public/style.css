@@ -1,0 +1,349 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #1a1a1a;
+  color: #fff;
+  overflow: hidden;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.loading.hidden {
+  display: none;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  margin-top: 30px;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#loading-logs {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+#loading-logs::-webkit-scrollbar {
+  width: 6px;
+}
+
+#loading-logs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#loading-logs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.log-line {
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.log-line:last-child {
+  border-bottom: none;
+}
+
+/* Poster Container - Theater Style for Portrait 43" Display */
+.poster-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+  background: #1a1a1a;
+  padding: 20px 0;
+}
+
+.poster-container.visible {
+  opacity: 1;
+}
+
+/* Subtle Backdrop - very dim, theater-like */
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(0.15);
+  transform: scale(1.2);
+  transition: background-image 1.2s ease-in-out;
+  opacity: 0.5;
+}
+
+/* Main Poster - fills most of the screen like a theater poster */
+.poster {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease-in-out;
+  min-height: 0;
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 80px rgba(0, 0, 0, 0.9));
+  transition: opacity 0.8s ease-in-out;
+  image-rendering: high-quality;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Info Overlay - always visible at bottom, compact */
+.info {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  padding: 20px 0;
+  opacity: 1;
+  transition: opacity 0.8s ease-in-out;
+  width: 100%;
+}
+
+.info-content {
+  max-width: 100%;
+  text-align: center;
+}
+
+.title {
+  font-size: 2.2em;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-shadow: 0 3px 15px rgba(0, 0, 0, 0.9);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.tagline {
+  font-size: 1.1em;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  line-height: 1.3;
+}
+
+.tagline:empty {
+  display: none;
+}
+
+.metadata {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 12px;
+  font-size: 1.1em;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.metadata span {
+  display: flex;
+  align-items: center;
+}
+
+.rating {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.rt-score {
+  color: #ff6347;
+  font-weight: 700;
+}
+
+.rt-score:empty {
+  display: none;
+}
+
+.source {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.source img {
+  height: 22px;
+  width: auto;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Progress Bar */
+.progress-container {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.progress-container.hidden {
+  display: none;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+  width: 0%;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+}
+
+.progress-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+/* Now Playing Indicator - Theater Style */
+.now-playing {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 40px;
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 1.6em;
+  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.6);
+  letter-spacing: 0.05em;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.now-playing.hidden {
+  display: none;
+}
+
+.pulse {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+/* Status Indicator - subtle, bottom corner */
+.status {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  z-index: 3;
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  font-size: 1.2em;
+  color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Coming Soon Indicator - Subdued Style */
+.coming-soon {
+  position: relative;
+  z-index: 3;
+  margin-bottom: 20px;
+}
+
+.coming-soon.hidden {
+  display: none;
+}
+
+.coming-soon-box {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1.1em;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+/* Fade transitions */
+.fade-out {
+  opacity: 0 !important;
+}
+
+.fade-in {
+  opacity: 1 !important;
+}

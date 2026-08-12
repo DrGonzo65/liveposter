@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metadata Manager - LivePoster</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 36px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    select, input, button {
+      padding: 10px 15px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      border: none;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat {
+      background: #1a1a1a;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .movie-card {
+      background: #1a1a1a;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #333;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .movie-card:hover {
+      border-color: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    .movie-card.bad-metadata {
+      border-color: #dc2626;
+    }
+
+    .slideshow-toggle-card {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .slideshow-toggle-card:hover {
+      background: rgba(0, 0, 0, 0.95);
+    }
+
+    .slideshow-toggle-card input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .movie-poster {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+    }
+
+    .movie-info {
+      padding: 10px;
+    }
+
+    .movie-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .movie-year {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .quality-badges {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 3px 6px;
+      border-radius: 3px;
+      background: #333;
+    }
+
+    .badge.good {
+      background: #059669;
+    }
+
+    .badge.bad {
+      background: #dc2626;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border-radius: 12px;
+      max-width: 800px;
+      width: 100%;
+      padding: 30px;
+      border: 1px solid #333;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+    }
+
+    .close-btn:hover {
+      color: #fff;
+    }
+
+    .movie-details {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .detail-poster {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .detail-info h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .detail-info p {
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    .slideshow-toggle {
+      margin-top: 20px;
+      padding: 15px;
+      background: #252525;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .slideshow-toggle label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .slideshow-toggle input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .search-section {
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid #333;
+    }
+
+    .search-section h3 {
+      margin-bottom: 15px;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-form input {
+      flex: 1;
+    }
+
+    .search-results {
+      display: grid;
+      gap: 15px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    .search-results::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .search-results::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 4px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 4px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .result-item {
+      background: #252525;
+      padding: 15px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .result-poster {
+      width: 80px;
+      border-radius: 4px;
+    }
+
+    .result-info h4 {
+      margin-bottom: 5px;
+    }
+
+    .result-info p {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 3px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .settings-form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .settings-section {
+      background: #252525;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .settings-section h3 {
+      margin-bottom: 15px;
+      font-size: 18px;
+      color: #2563eb;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .form-group input {
+      width: 100%;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .btn-save {
+      background: #059669;
+    }
+
+    .btn-save:hover {
+      background: #047857;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-indicator.connected {
+      background: #059669;
+    }
+
+    .status-indicator.disconnected {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Metadata Manager</h1>
+
+    <div class="controls">
+      <select id="source-filter">
+        <option value="all">All Sources</option>
+        <option value="kaleidescape">Kaleidescape</option>
+        <option value="plex">Plex</option>
+        <option value="jellyfin">Jellyfin</option>
+      </select>
+
+      <select id="quality-filter">
+        <option value="all">All Quality</option>
+        <option value="incomplete">Incomplete Metadata</option>
+        <option value="no-poster">Missing Poster</option>
+        <option value="no-tagline">Missing Tagline</option>
+        <option value="no-rt">Missing RT Score</option>
+      </select>
+
+      <input type="text" id="search-input" placeholder="Search movies...">
+
+      <button onclick="openSettings()">⚙️ Settings</button>
+      <button onclick="location.href='/'">← Back to Display</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Total Movies</div>
+        <div class="stat-value" id="total-count">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Complete Metadata</div>
+        <div class="stat-value" id="complete-count">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Needs Review</div>
+        <div class="stat-value" id="incomplete-count">0</div>
+      </div>
+    </div>
+
+    <div class="movies-grid" id="movies-grid">
+      <div class="loading">Loading movies...</div>
+    </div>
+  </div>
+
+  <!-- Movie Detail Modal -->
+  <div class="modal" id="movie-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Movie Details</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+
+      <div class="movie-details" id="movie-details"></div>
+
+      <div class="slideshow-toggle">
+        <label>
+          <input type="checkbox" id="slideshow-enabled" onchange="toggleSlideshow()">
+          <span>Show in slideshow</span>
+        </label>
+      </div>
+
+      <div class="search-section">
+        <h3>Search for Correct Match</h3>
+        <div class="search-form">
+          <input type="text" id="alt-search-title" placeholder="Movie title">
+          <input type="text" id="alt-search-year" placeholder="Year">
+          <button onclick="searchAlternatives()">Search TMDb</button>
+        </div>
+        <div class="search-results" id="search-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Settings</h2>
+        <button class="close-btn" onclick="closeSettings()">&times;</button>
+      </div>
+
+      <form class="settings-form" onsubmit="saveSettings(event)">
+        <div class="settings-section">
+          <h3>TMDb Configuration</h3>
+          <div class="form-group">
+            <label for="tmdb-key">TMDb API Key</label>
+            <input type="text" id="tmdb-key" placeholder="Your TMDb API key">
+          </div>
+          <div class="form-group">
+            <label for="tmdb-token">TMDb Read Access Token (required for API calls)</label>
+            <input type="text" id="tmdb-token" placeholder="Your TMDb read access token">
+            <small style="color: #888; display: block; margin-top: 5px;">Get this from TMDb Settings → API → "API Read Access Token"</small>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>OMDb Configuration (Rotten Tomatoes)</h3>
+          <div class="form-group">
+            <label for="omdb-key">OMDb API Key</label>
+            <input type="text" id="omdb-key" placeholder="Your OMDb API key">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Kaleidescape Configuration</h3>
+          <div class="form-group">
+            <label for="k-host">Player IP Address (TCP control, port 10000)</label>
+            <input type="text" id="k-host" placeholder="192.168.1.50">
+          </div>
+          <div class="form-group">
+            <label for="k-port">Port</label>
+            <input type="number" id="k-port" placeholder="10000">
+          </div>
+          <div class="form-group">
+            <label for="k-http-host">Movie Server IP Address (if different from player)</label>
+            <input type="text" id="k-http-host" placeholder="Leave blank if same as player">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Plex Configuration</h3>
+          <div class="form-group">
+            <label for="plex-url">Server URL</label>
+            <input type="text" id="plex-url" placeholder="http://192.168.1.100:32400">
+          </div>
+          <div class="form-group">
+            <label for="plex-token">Authentication Token</label>
+            <input type="text" id="plex-token" placeholder="Your Plex token">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Jellyfin Configuration</h3>
+          <div class="form-group">
+            <label for="jellyfin-url">Server URL</label>
+            <input type="text" id="jellyfin-url" placeholder="http://192.168.1.100:8096">
+          </div>
+          <div class="form-group">
+            <label for="jellyfin-key">API Key</label>
+            <input type="text" id="jellyfin-key" placeholder="Your Jellyfin API key">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Display Settings</h3>
+          <div class="form-group">
+            <label for="display-scale">Display Scale: <span id="scale-value">1.0</span>x</label>
+            <input type="range" id="display-scale" min="0.5" max="3.0" step="0.1" value="1.0" oninput="updateScaleValue(this.value)" style="width: 100%;">
+            <small style="color: #888;">Adjust the overall size of text and UI on the main display</small>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Content Filters</h3>
+          <div class="form-group">
+            <label>Allowed MPAA Ratings (Slideshow Only):</label>
+            <small style="color: #888; display: block; margin-bottom: 10px;">Select which ratings can appear in the slideshow. Uncheck to hide content with that rating.</small>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 10px;">
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-g" checked style="margin-right: 8px;">
+                <span>G</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-pg" checked style="margin-right: 8px;">
+                <span>PG</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-pg13" checked style="margin-right: 8px;">
+                <span>PG-13</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-r" checked style="margin-right: 8px;">
+                <span>R</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-nc17" checked style="margin-right: 8px;">
+                <span>NC-17</span>
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="rating-nr" checked style="margin-right: 8px;">
+                <span>NR/Unrated</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>General Settings</h3>
+          <div class="form-group">
+            <label for="poll-interval">Poll Interval (seconds)</label>
+            <input type="number" id="poll-interval" placeholder="10" step="1">
+          </div>
+          <div class="form-group">
+            <label for="slideshow-interval">Slideshow Interval (seconds)</label>
+            <input type="number" id="slideshow-interval" placeholder="30" step="1">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Cache Management</h3>
+          <div class="form-group">
+            <label>Clear metadata cache and re-fetch from TMDb</label>
+            <button type="button" onclick="clearCache()" style="background: #dc2626; margin-top: 10px;">Clear Cache & Restart</button>
+            <small style="color: #888; display: block; margin-top: 8px;">This will delete all cached movie metadata and restart the server. Use this after changing poster quality settings or to fix metadata issues.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick="closeSettings()">Cancel</button>
+          <button type="submit" class="btn-save">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="manage.js"></script>
+</body>
+</html>

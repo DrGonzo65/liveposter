@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LivePoster - Media Display</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading state -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <h2 style="margin-top: 30px; font-size: 2rem; font-weight: 700;">LivePoster</h2>
+      <p>Connecting to server...</p>
+      <div id="loading-logs" style="margin-top: 30px; max-width: 600px; max-height: 200px; overflow-y: auto; text-align: left; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; line-height: 1.4; color: rgba(255, 255, 255, 0.7);"></div>
+    </div>
+
+    <!-- Main poster display -->
+    <div id="poster-container" class="poster-container">
+      <!-- Background backdrop -->
+      <div id="backdrop" class="backdrop"></div>
+
+      <!-- Now Playing indicator -->
+      <div id="now-playing" class="now-playing hidden">
+        <span class="pulse"></span>
+        <span class="text">NOW PLAYING</span>
+      </div>
+
+      <!-- Coming Soon indicator -->
+      <div id="coming-soon" class="coming-soon hidden">
+        <div class="coming-soon-box">COMING SOON</div>
+      </div>
+
+      <!-- Poster image -->
+      <div id="poster" class="poster">
+        <img id="poster-image" src="" alt="Movie Poster">
+      </div>
+
+      <!-- Movie info overlay -->
+      <div id="info" class="info">
+        <div class="info-content">
+          <h1 id="title" class="title"></h1>
+          <p id="tagline" class="tagline"></p>
+          <div id="metadata" class="metadata">
+            <span id="year" class="year"></span>
+            <span id="rating" class="rating"></span>
+            <span id="rt-score" class="rt-score"></span>
+            <span id="source" class="source"></span>
+          </div>
+
+          <!-- Progress bar (only shown when playing) -->
+          <div id="progress-container" class="progress-container hidden">
+            <div id="progress-bar" class="progress-bar">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-time" class="progress-time">
+              <span id="current-time">0:00</span>
+              <span id="total-time">0:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status indicator -->
+      <div id="status" class="status" style="display: none;">
+        <span id="status-text">Idle</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

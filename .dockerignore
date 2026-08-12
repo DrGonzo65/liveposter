@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.env.*
+.cache
+*.md
+*.tar
+.DS_Store
+.claude
+# Local diagnostic scripts - not needed at runtime
+test-*.js
