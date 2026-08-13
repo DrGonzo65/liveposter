@@ -16,6 +16,33 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+/**
+ * Read a configuration value from the environment.
+ *
+ * Supports the Docker/Podman/Kubernetes secrets convention: any variable FOO
+ * may instead be supplied as FOO_FILE pointing at a file containing the value
+ * (e.g. JELLYFIN_API_KEY_FILE=/run/secrets/jellyfin_key). This keeps
+ * credentials out of `docker inspect`, out of compose files, and out of the
+ * Unraid template. FOO_FILE takes precedence over FOO when both are set.
+ */
+const secretsFromFiles = [];
+function envValue(name) {
+  const filePath = process.env[`${name}_FILE`];
+
+  if (filePath) {
+    try {
+      const value = fs.readFileSync(filePath, 'utf8').trim();
+      secretsFromFiles.push(name);
+      return value;
+    } catch (error) {
+      // Fall back to the plain variable rather than starting up misconfigured
+      console.error(`Could not read ${name}_FILE at ${filePath}: ${error.message}`);
+    }
+  }
+
+  return process.env[name];
+}
+
 // Load persistent settings from cache directory (for Docker)
 const settingsFile = path.join(__dirname, '.cache', 'settings.json');
 let persistentSettings = {};
@@ -32,30 +59,36 @@ if (fs.existsSync(settingsFile)) {
 // Configuration from environment variables (with persistent settings override)
 const config = {
   kaleidescape: {
-    host: persistentSettings.kaleidescape?.host || process.env.KALEIDESCAPE_HOST,
-    httpHost: persistentSettings.kaleidescape?.httpHost || process.env.KALEIDESCAPE_HTTP_HOST,
-    port: parseInt(persistentSettings.kaleidescape?.port || process.env.KALEIDESCAPE_PORT) || 10000
+    // The player answers play-status queries; the server holds the movie library.
+    // On an all-in-one system (e.g. Strato V) leave serverHost unset.
+    playerHost: persistentSettings.kaleidescape?.playerHost || envValue('KALEIDESCAPE_PLAYER_HOST'),
+    serverHost: persistentSettings.kaleidescape?.serverHost || envValue('KALEIDESCAPE_SERVER_HOST'),
+    port: parseInt(persistentSettings.kaleidescape?.port || envValue('KALEIDESCAPE_PORT')) || 10000
   },
   plex: {
-    url: persistentSettings.plex?.url || process.env.PLEX_URL,
-    token: persistentSettings.plex?.token || process.env.PLEX_TOKEN
+    url: persistentSettings.plex?.url || envValue('PLEX_URL'),
+    token: persistentSettings.plex?.token || envValue('PLEX_TOKEN')
   },
   jellyfin: {
-    url: persistentSettings.jellyfin?.url || process.env.JELLYFIN_URL,
-    apiKey: persistentSettings.jellyfin?.apiKey || process.env.JELLYFIN_API_KEY
+    url: persistentSettings.jellyfin?.url || envValue('JELLYFIN_URL'),
+    apiKey: persistentSettings.jellyfin?.apiKey || envValue('JELLYFIN_API_KEY')
   },
   tmdb: {
-    apiKey: persistentSettings.tmdb?.apiKey || process.env.TMDB_API_KEY,
-    readToken: persistentSettings.tmdb?.readToken || process.env.TMDB_READ_TOKEN
+    apiKey: persistentSettings.tmdb?.apiKey || envValue('TMDB_API_KEY'),
+    readToken: persistentSettings.tmdb?.readToken || envValue('TMDB_READ_TOKEN')
   },
   omdb: {
-    apiKey: persistentSettings.omdb?.apiKey || process.env.OMDB_API_KEY
+    apiKey: persistentSettings.omdb?.apiKey || envValue('OMDB_API_KEY')
   },
-  pollInterval: parseInt(persistentSettings.pollInterval || process.env.POLL_INTERVAL) || 10000,
-  slideshowInterval: parseInt(persistentSettings.slideshowInterval || process.env.SLIDESHOW_INTERVAL) || 30000,
-  displayScale: parseFloat(persistentSettings.displayScale || process.env.DISPLAY_SCALE) || 1.0,
+  pollInterval: parseInt(persistentSettings.pollInterval || envValue('POLL_INTERVAL')) || 10000,
+  slideshowInterval: parseInt(persistentSettings.slideshowInterval || envValue('SLIDESHOW_INTERVAL')) || 30000,
+  displayScale: parseFloat(persistentSettings.displayScale || envValue('DISPLAY_SCALE')) || 1.0,
   allowedRatings: persistentSettings.allowedRatings || ['G', 'PG', 'PG-13', 'R', 'NC-17', 'NR']
 };
+
+if (secretsFromFiles.length > 0) {
+  console.log(`Loaded from *_FILE: ${secretsFromFiles.join(', ')}`);
+}
 
 // Initialize media monitor
 const monitor = new MediaMonitor(config);
@@ -110,8 +143,11 @@ app.get('/api/debug/kaleidescape', (req, res) => {
   }
   res.json({
     connected: client.connected,
+    deviceType: client.deviceType,
+    playbackUnsupported: client.playbackUnsupported,
     state: client.currentState,
-    host: client.host,
+    playerHost: client.host,
+    serverHost: config.kaleidescape.serverHost || client.host,
     port: client.port
   });
 });
@@ -145,7 +181,7 @@ app.get('/api/config', (req, res) => {
     pollInterval: config.pollInterval,
     slideshowInterval: config.slideshowInterval,
     systems: {
-      kaleidescape: !!config.kaleidescape.host,
+      kaleidescape: !!config.kaleidescape.playerHost,
       plex: !!config.plex.url && !!config.plex.token,
       jellyfin: !!config.jellyfin.url && !!config.jellyfin.apiKey
     }
@@ -165,7 +201,7 @@ app.get('/api/health', (req, res) => {
 // Loading status
 app.get('/api/loading', (req, res) => {
   // Check if any services are configured
-  const hasKaleidescape = !!config.kaleidescape.host;
+  const hasKaleidescape = !!config.kaleidescape.playerHost;
   const hasPlex = !!config.plex.url && !!config.plex.token;
   const hasJellyfin = !!config.jellyfin.url && !!config.jellyfin.apiKey;
   const hasTmdb = !!config.tmdb.apiKey && !!config.tmdb.readToken;
@@ -271,9 +307,9 @@ app.get('/api/settings', (req, res) => {
       apiKey: config.omdb.apiKey || ''
     },
     kaleidescape: {
-      host: config.kaleidescape.host || '',
+      playerHost: config.kaleidescape.playerHost || '',
       port: config.kaleidescape.port || 10000,
-      httpHost: config.kaleidescape.httpHost || ''
+      serverHost: config.kaleidescape.serverHost || ''
     },
     plex: {
       url: config.plex.url || '',
@@ -324,55 +360,22 @@ app.post('/api/settings', express.json(), async (req, res) => {
   const settings = req.body;
 
   try {
-    // Save to persistent settings file (for Docker - survives container updates)
+    // The mounted cache directory is the single source of truth for saved
+    // settings. We deliberately do NOT also write .env: inside a container
+    // that path lives in an image layer, so it is lost on every update and
+    // would duplicate each credential in a second, unmounted location.
     const settingsFile = path.join(__dirname, '.cache', 'settings.json');
+    fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
     fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
     console.log('Settings saved to persistent cache');
-
-    // Also save to .env file (for local development)
-    const envContent = `# Server Configuration
-PORT=${process.env.PORT || 3000}
-
-# Kaleidescape Configuration
-KALEIDESCAPE_HOST=${settings.kaleidescape?.host || ''}
-KALEIDESCAPE_PORT=${settings.kaleidescape?.port || 10000}
-
-# Plex Configuration
-PLEX_URL=${settings.plex?.url || ''}
-PLEX_TOKEN=${settings.plex?.token || ''}
-
-# Jellyfin Configuration
-JELLYFIN_URL=${settings.jellyfin?.url || ''}
-JELLYFIN_API_KEY=${settings.jellyfin?.apiKey || ''}
-
-# Polling interval in milliseconds (default: 10000 = 10 seconds)
-POLL_INTERVAL=${settings.pollInterval || 10000}
-
-# Idle slideshow interval in milliseconds (default: 30000 = 30 seconds)
-SLIDESHOW_INTERVAL=${settings.slideshowInterval || 10000}
-
-# Display scale for UI (default: 1.0)
-DISPLAY_SCALE=${settings.displayScale || 1.0}
-
-# TheMovieDB Configuration
-TMDB_API_KEY=${settings.tmdb?.apiKey || ''}
-TMDB_READ_TOKEN=${settings.tmdb?.readToken || ''}
-
-# OMDb API Key (optional - for Rotten Tomatoes scores)
-# Get free key at: http://www.omdbapi.com/apikey.aspx
-OMDB_API_KEY=${settings.omdb?.apiKey || ''}
-`;
-
-    // Write to .env file
-    fs.writeFileSync(path.join(__dirname, '.env'), envContent);
 
     // Update in-memory config immediately (so changes apply without restart)
     config.tmdb.apiKey = settings.tmdb?.apiKey || '';
     config.tmdb.readToken = settings.tmdb?.readToken || '';
     config.omdb.apiKey = settings.omdb?.apiKey || '';
-    config.kaleidescape.host = settings.kaleidescape?.host || '';
+    config.kaleidescape.playerHost = settings.kaleidescape?.playerHost || '';
     config.kaleidescape.port = parseInt(settings.kaleidescape?.port) || 10000;
-    config.kaleidescape.httpHost = settings.kaleidescape?.httpHost || '';
+    config.kaleidescape.serverHost = settings.kaleidescape?.serverHost || '';
     config.plex.url = settings.plex?.url || '';
     config.plex.token = settings.plex?.token || '';
     config.jellyfin.url = settings.jellyfin?.url || '';
@@ -421,7 +424,7 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`\n🎬 LivePoster server running on http://localhost:${PORT}`);
       console.log(`\nConfigured systems:`);
-      console.log(`  - Kaleidescape: ${config.kaleidescape.host ? '✓' : '✗'}`);
+      console.log(`  - Kaleidescape: ${config.kaleidescape.playerHost ? '✓' : '✗'}`);
       console.log(`  - Plex: ${config.plex.url ? '✓' : '✗'}`);
       console.log(`  - Jellyfin: ${config.jellyfin.url ? '✓' : '✗'}`);
       console.log(`\nPolling interval: ${config.pollInterval}ms`);

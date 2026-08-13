@@ -378,9 +378,9 @@ async function openSettings() {
     document.getElementById('tmdb-key').value = settings.tmdb?.apiKey || '';
     document.getElementById('tmdb-token').value = settings.tmdb?.readToken || '';
     document.getElementById('omdb-key').value = settings.omdb?.apiKey || '';
-    document.getElementById('k-host').value = settings.kaleidescape?.host || '';
+    document.getElementById('k-player-host').value = settings.kaleidescape?.playerHost || '';
     document.getElementById('k-port').value = settings.kaleidescape?.port || '';
-    document.getElementById('k-http-host').value = settings.kaleidescape?.httpHost || '';
+    document.getElementById('k-server-host').value = settings.kaleidescape?.serverHost || '';
     document.getElementById('plex-url').value = settings.plex?.url || '';
     document.getElementById('plex-token').value = settings.plex?.token || '';
     document.getElementById('jellyfin-url').value = settings.jellyfin?.url || '';
@@ -430,9 +430,9 @@ async function saveSettings(event) {
       apiKey: document.getElementById('omdb-key').value
     },
     kaleidescape: {
-      host: document.getElementById('k-host').value,
+      playerHost: document.getElementById('k-player-host').value,
       port: parseInt(document.getElementById('k-port').value) || 10000,
-      httpHost: document.getElementById('k-http-host').value || undefined
+      serverHost: document.getElementById('k-server-host').value || undefined
     },
     plex: {
       url: document.getElementById('plex-url').value,

@@ -536,16 +536,18 @@
         <div class="settings-section">
           <h3>Kaleidescape Configuration</h3>
           <div class="form-group">
-            <label for="k-host">Player IP Address (TCP control, port 10000)</label>
-            <input type="text" id="k-host" placeholder="192.168.1.50">
+            <label for="k-player-host">Player IP Address</label>
+            <input type="text" id="k-player-host" placeholder="192.168.1.50">
+            <small style="opacity:0.7">The device that plays movies. Required for "Now Playing" detection.</small>
           </div>
           <div class="form-group">
-            <label for="k-port">Port</label>
+            <label for="k-port">Player Control Port</label>
             <input type="number" id="k-port" placeholder="10000">
           </div>
           <div class="form-group">
-            <label for="k-http-host">Movie Server IP Address (if different from player)</label>
-            <input type="text" id="k-http-host" placeholder="Leave blank if same as player">
+            <label for="k-server-host">Movie Server IP Address</label>
+            <input type="text" id="k-server-host" placeholder="Leave blank if same as player">
+            <small style="opacity:0.7">The device that stores your movies (e.g. a Terra). Leave blank on an all-in-one system such as a Strato V.</small>
           </div>
         </div>
 
