@@ -2,6 +2,7 @@
 
 let allMovies = [];
 let currentMovie = null;
+let renderedMovies = [];   // the filtered list currently drawn in the grid
 
 // Load movies on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,23 +39,62 @@ function updateStats() {
   document.getElementById('incomplete-count').textContent = incomplete;
 }
 
+/**
+ * Click handling for the grid.
+ *
+ * The card used to carry onclick="showMovieDetails('<title>', ...)" with the
+ * title interpolated in. Any title containing an apostrophe closed the JS
+ * string early and the handler silently failed to parse, and any title
+ * containing "&amp;" arrived decoded, so the lookup against the raw cached
+ * title found nothing. Either way the card just didn't respond. Titles now
+ * never leave JavaScript - the card carries its position instead.
+ */
+function bindGridClicks() {
+  const grid = document.getElementById('movies-grid');
+  if (grid.dataset.clicksBound) return;
+  grid.dataset.clicksBound = 'true';
+
+  grid.addEventListener('click', (event) => {
+    const card = event.target.closest('.movie-card');
+    if (!card) return;
+
+    const movie = renderedMovies[Number(card.dataset.index)];
+    if (!movie) return;
+
+    const toggle = event.target.closest('.slideshow-toggle-card');
+    if (toggle) {
+      event.stopPropagation();
+      toggleSlideshowFromGrid(movie.title, movie.source, toggle);
+      return;
+    }
+
+    showMovieDetails(movie.title, movie.source);
+  });
+}
+
 function displayMovies(movies) {
   const grid = document.getElementById('movies-grid');
+  bindGridClicks();
 
   if (movies.length === 0) {
+    renderedMovies = [];
     grid.innerHTML = '<div class="loading">No movies found</div>';
     return;
   }
 
-  grid.innerHTML = movies.map(movie => {
+  // Cards are addressed by position, so a title never has to survive a trip
+  // through an HTML attribute (see bindGridClicks)
+  renderedMovies = movies;
+
+  grid.innerHTML = movies.map((movie, index) => {
     const quality = movie.metadataQuality;
     const isIncomplete = !quality.complete;
     const posterUrl = movie.posterUrl || movie.posterUrlLarge || movie.thumb;
     const slideshowEnabled = movie.slideshowEnabled !== false;
 
     return `
-      <div class="movie-card ${isIncomplete ? 'bad-metadata' : ''}" onclick="showMovieDetails('${escapeHtml(movie.title)}', '${movie.source}')">
-        <div class="slideshow-toggle-card" onclick="event.stopPropagation(); toggleSlideshowFromGrid('${escapeHtml(movie.title)}', '${movie.source}', this)">
+      <div class="movie-card ${isIncomplete ? 'bad-metadata' : ''}" data-index="${index}">
+        <div class="slideshow-toggle-card">
           <input type="checkbox" ${slideshowEnabled ? 'checked' : ''} title="${slideshowEnabled ? 'Enabled in slideshow' : 'Disabled in slideshow'}">
         </div>
         ${posterUrl
@@ -126,7 +166,8 @@ function showMovieDetails(title, source) {
   const posterUrl = movie.posterUrlLarge || movie.posterUrl || movie.thumb;
   const quality = movie.metadataQuality;
 
-  document.getElementById('modal-title').textContent = movie.title;
+  // textContent shows entities literally, so decode first
+  document.getElementById('modal-title').textContent = decodeEntities(movie.title);
   document.getElementById('movie-details').innerHTML = `
     <div>
       ${posterUrl
@@ -157,7 +198,7 @@ function showMovieDetails(title, source) {
   `;
 
   // Pre-fill search form
-  document.getElementById('alt-search-title').value = movie.title;
+  document.getElementById('alt-search-title').value = decodeEntities(movie.title);
   document.getElementById('alt-search-year').value = movie.year || '';
   document.getElementById('search-results').innerHTML = '';
 
@@ -223,7 +264,7 @@ async function searchAlternatives() {
 async function applyMetadata(tmdbId, mediaType) {
   if (!currentMovie) return;
 
-  if (!confirm(`Apply this metadata to "${currentMovie.title}"?`)) {
+  if (!confirm(`Apply this metadata to "${decodeEntities(currentMovie.title)}"?`)) {
     return;
   }
 
@@ -340,13 +381,30 @@ async function toggleSlideshowFromGrid(title, source, element) {
   }
 }
 
-function escapeHtml(text) {
-  // First decode any HTML entities, then escape for display
+/**
+ * Turn the stored form of a title ("Wallace &amp; Gromit") into readable text.
+ * Use this whenever a title is assigned to textContent or put in a confirm().
+ */
+function decodeEntities(text) {
   const div = document.createElement('div');
-  div.innerHTML = text;
-  const decoded = div.textContent;
-  div.textContent = decoded;
-  return div.innerHTML;
+  div.innerHTML = text ?? '';
+  return div.textContent;
+}
+
+function escapeHtml(text) {
+  // Library titles arrive already entity-encoded ("Wallace &amp; Gromit"), so
+  // decode first or the page shows the raw entity. Then re-escape - including
+  // quotes, which textContent->innerHTML leaves alone and which would break out
+  // of any attribute this lands in.
+  const div = document.createElement('div');
+  div.innerHTML = text ?? '';
+
+  return div.textContent
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function decodeHtml(text) {
