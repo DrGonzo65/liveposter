@@ -1,17 +1,19 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>LivePoster</Name>
-  <Repository>liveposter:latest</Repository>
-  <Registry>https://hub.docker.com/</Registry>
+  <Repository>drgonzo65/liveposter:latest</Repository>
+  <Registry>https://hub.docker.com/r/drgonzo65/liveposter</Registry>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
-  <Support>https://github.com/yourusername/liveposter/issues</Support>
-  <Project>https://github.com/yourusername/liveposter</Project>
+  <Support>https://github.com/DrGonzo65/liveposter/issues</Support>
+  <Project>https://github.com/DrGonzo65/liveposter</Project>
   <Overview>LivePoster is a media poster display server that monitors your home theater systems (Kaleidescape, Plex, Jellyfin) and displays movie/TV posters. When media is playing, it shows the current content with progress bar. When idle, it cycles through your library as a slideshow.</Overview>
   <Category>MediaApp:Video MediaServer:Video</Category>
   <WebUI>http://[IP]:[PORT:3000]</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/yourusername/liveposter/main/icon.png</Icon>
+  <!-- Add an icon.png to the repo root, then uncomment (branch must match):
+  <Icon>https://raw.githubusercontent.com/DrGonzo65/liveposter/master/icon.png</Icon>
+  -->
   <Description>
     LivePoster monitors your media systems and displays beautiful movie posters on any screen.
 
