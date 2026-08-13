@@ -54,8 +54,9 @@ This will take a few minutes on first build.
 
 **Environment Variables:**
 Add these variables (adjust values for your setup):
-- `KALEIDESCAPE_HOST` = `192.168.1.50` (your Kaleidescape IP)
+- `KALEIDESCAPE_PLAYER_HOST` = `192.168.1.50` (the **player** - answers play-status queries)
 - `KALEIDESCAPE_PORT` = `10000`
+- `KALEIDESCAPE_SERVER_HOST` = `192.168.1.51` (the **movie server** - serves the library page; omit if one device)
 - `TMDB_API_KEY` = `your-tmdb-api-key`
 - `OMDB_API_KEY` = `your-omdb-api-key` (optional)
 - `PLEX_URL` = `http://192.168.1.60:32400` (optional)

@@ -26,6 +26,9 @@ A media poster display server that monitors your home theater systems (Kaleidesc
 
 ## Installation
 
+**New here? Start with [SETUP.md](SETUP.md)** — a step-by-step guide covering
+credentials, working out which Kaleidescape address goes where, and first run.
+
 ### Option 1: Docker (Recommended for Unraid)
 
 See [DOCKER.md](DOCKER.md) for complete Docker and Unraid deployment instructions.
@@ -54,9 +57,15 @@ cp .env.example .env
 # Server Configuration
 PORT=3000
 
-# Kaleidescape Configuration
-KALEIDESCAPE_HOST=192.168.1.100
+# TheMovieDB - both values are required
+TMDB_API_KEY=your_tmdb_api_key_here
+TMDB_READ_TOKEN=your_tmdb_read_token_here
+
+# Kaleidescape - PLAYER_HOST reports what's playing; SERVER_HOST holds the movies.
+# Leave SERVER_HOST blank on an all-in-one system such as a Strato V.
+KALEIDESCAPE_PLAYER_HOST=192.168.1.100
 KALEIDESCAPE_PORT=10000
+KALEIDESCAPE_SERVER_HOST=
 
 # Plex Configuration
 PLEX_URL=http://192.168.1.101:32400
@@ -72,6 +81,8 @@ POLL_INTERVAL=10000
 # Idle slideshow interval in milliseconds (default: 30000 = 30 seconds)
 SLIDESHOW_INTERVAL=30000
 ```
+
+See [SETUP.md](SETUP.md) for how to obtain each credential.
 
 ## Getting API Keys
 
@@ -90,9 +101,20 @@ Or visit: https://support.plex.tv/articles/204059436-finding-an-authentication-t
 4. Name it "LivePoster" and save
 
 ### Kaleidescape
-- Use the IP address of your Kaleidescape player
-- Default port is 10000
-- No authentication required
+
+No authentication is required, but **which device you point at matters**:
+
+- `KALEIDESCAPE_PLAYER_HOST` must be the **player** — it reports what's playing (port 10000)
+- `KALEIDESCAPE_SERVER_HOST` must be the device **holding your movies** — a Terra
+  movie server, or the same player on an all-in-one system such as a Strato V
+
+On an all-in-one system, set `KALEIDESCAPE_PLAYER_HOST` and leave `KALEIDESCAPE_SERVER_HOST`
+blank; it falls back to the same address.
+
+Pointing `KALEIDESCAPE_PLAYER_HOST` at a movie server is the most common setup mistake —
+the slideshow works but "Now Playing" never appears. See
+[SETUP.md](SETUP.md#4-kaleidescape-which-address-goes-where) for commands that
+identify each device.
 
 ## Usage
 
@@ -145,21 +167,28 @@ http://localhost:3000
 
 ### Settings
 - `GET /api/settings` - Get current configuration
-- `POST /api/settings` - Save configuration to .env file
+- `POST /api/settings` - Save configuration to `.cache/settings.json` (persists across container updates)
 
 ## Configuration
 
-All configuration is done through environment variables in the `.env` file:
+Configuration comes from environment variables (or the Settings UI, which
+overrides them). Any variable can also be supplied as `<NAME>_FILE` pointing at a
+file containing the value — see [Docker secrets](DOCKER.md#docker-secrets).
 
-- `PORT` - Server port (default: 3000)
-- `KALEIDESCAPE_HOST` - Kaleidescape player IP address
-- `KALEIDESCAPE_PORT` - Kaleidescape control port (default: 10000)
-- `PLEX_URL` - Plex server URL
-- `PLEX_TOKEN` - Plex authentication token
-- `JELLYFIN_URL` - Jellyfin server URL
-- `JELLYFIN_API_KEY` - Jellyfin API key
-- `POLL_INTERVAL` - How often to check for playback (milliseconds)
-- `SLIDESHOW_INTERVAL` - How often to change slides when idle (milliseconds)
+| Variable | Purpose |
+|---|---|
+| `PORT` | Server port (default: 3000) |
+| `TMDB_API_KEY` | TMDb API key, v3 auth — **required** |
+| `TMDB_READ_TOKEN` | TMDb read access token, v4 auth — **required** |
+| `OMDB_API_KEY` | OMDb key, for Rotten Tomatoes scores (optional) |
+| `KALEIDESCAPE_PLAYER_HOST` | Kaleidescape **player** IP — reports what's playing |
+| `KALEIDESCAPE_SERVER_HOST` | Device holding the movie library; blank = same as `KALEIDESCAPE_PLAYER_HOST` |
+| `KALEIDESCAPE_PORT` | Control port (default: 10000) |
+| `PLEX_URL` / `PLEX_TOKEN` | Plex server and token |
+| `JELLYFIN_URL` / `JELLYFIN_API_KEY` | Jellyfin server and API key |
+| `POLL_INTERVAL` | How often to check for playback (ms, default 10000) |
+| `SLIDESHOW_INTERVAL` | How often to change slides when idle (ms, default 30000) |
+| `DISPLAY_SCALE` | Text scaling for the display (default 1.0) |
 
 ## Troubleshooting
 
@@ -188,17 +217,25 @@ All configuration is done through environment variables in the `.env` file:
 ```
 liveposter/
 ├── lib/
-│   ├── kaleidescape.js   # Kaleidescape TCP/IP client
+│   ├── kaleidescape.js   # Kaleidescape TCP/IP control client
 │   ├── plex.js           # Plex API integration
 │   ├── jellyfin.js       # Jellyfin API integration
+│   ├── tmdb.js           # TheMovieDB metadata enrichment
+│   ├── omdb.js           # OMDb lookups (Rotten Tomatoes scores)
+│   ├── cache.js          # Metadata cache manager
 │   └── monitor.js        # Media monitoring service
 ├── public/
-│   ├── index.html        # Frontend HTML
+│   ├── index.html        # Poster display
+│   ├── app.js            # Display logic
 │   ├── style.css         # Styles
-│   └── app.js            # Frontend JavaScript
+│   ├── manage.html       # Metadata manager + settings UI
+│   └── manage.js         # Manager logic
+├── .cache/               # Metadata cache + saved settings (mount this in Docker)
 ├── server.js             # Express server
 ├── package.json
 ├── .env.example
+├── SETUP.md              # Full setup guide
+├── DOCKER.md             # Docker / Unraid deployment
 └── README.md
 ```
 

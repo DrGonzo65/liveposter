@@ -7,8 +7,11 @@
 2. **Create a `.env` file** with your configuration (or use the settings UI after starting):
 ```bash
 # Kaleidescape Configuration
-KALEIDESCAPE_HOST=192.168.1.50
+# PLAYER_HOST answers play-status queries; SERVER_HOST is the movie server
+# that serves the /movies library page. Omit SERVER_HOST if they are one device.
+KALEIDESCAPE_PLAYER_HOST=192.168.1.50
 KALEIDESCAPE_PORT=10000
+KALEIDESCAPE_SERVER_HOST=192.168.1.51
 
 # Plex Configuration (optional)
 PLEX_URL=http://192.168.1.60:32400
@@ -65,7 +68,7 @@ Add a new container in Unraid's Docker tab with these settings:
   - **Description**: Persistent metadata cache
 
 **Environment Variables:**
-- `KALEIDESCAPE_HOST` = `192.168.1.50`
+- `KALEIDESCAPE_PLAYER_HOST` = `192.168.1.50`
 - `KALEIDESCAPE_PORT` = `10000`
 - `PLEX_URL` = `http://192.168.1.60:32400` (optional)
 - `PLEX_TOKEN` = `your-token` (optional)
@@ -98,10 +101,37 @@ After starting the container, you can also manage all settings through the web i
 4. Save settings
 5. Restart the container for changes to take effect
 
+## Docker Secrets
+
+Any environment variable can instead be supplied as `<NAME>_FILE`, pointing at a
+file that holds the value. `<NAME>_FILE` wins if both are set, and surrounding
+whitespace is trimmed. This keeps credentials out of `docker inspect`, out of a
+compose file you might commit, and out of the Unraid template:
+
+```yaml
+services:
+  liveposter:
+    environment:
+      - JELLYFIN_API_KEY_FILE=/run/secrets/jellyfin_key
+      - TMDB_READ_TOKEN_FILE=/run/secrets/tmdb_token
+    secrets:
+      - jellyfin_key
+      - tmdb_token
+
+secrets:
+  jellyfin_key:
+    file: ./secrets/jellyfin_key
+  tmdb_token:
+    file: ./secrets/tmdb_token
+```
+
+If a `_FILE` path can't be read, LivePoster logs the failure and falls back to
+the plain variable rather than starting up misconfigured.
+
 ## Volume Mounts
 
 ### Required:
-- `/app/.cache` - Stores enriched movie metadata to speed up startup
+- `/app/.cache` - Stores enriched movie metadata **and saved settings** (`settings.json`). Settings saved from the web UI are written here only, so they survive container updates.
 
 ### Optional:
 - `/app/.env` - Mount your .env file (read-only) if you prefer file-based configuration over environment variables

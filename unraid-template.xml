@@ -27,7 +27,9 @@
 
   <Config Name="Cache Directory" Target="/app/.cache" Default="/mnt/user/appdata/liveposter/cache" Mode="rw" Description="Persistent metadata cache directory" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/liveposter/cache</Config>
 
-  <Config Name="Kaleidescape Host" Target="KALEIDESCAPE_HOST" Default="" Mode="" Description="IP address of your Kaleidescape player (e.g., 192.168.1.50)" Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Kaleidescape Player IP" Target="KALEIDESCAPE_PLAYER_HOST" Default="" Mode="" Description="IP address of your Kaleidescape PLAYER - this is the device that answers play-status queries (e.g., 192.168.1.50)" Type="Variable" Display="always" Required="false" Mask="false"/>
+
+  <Config Name="Kaleidescape Movie Server IP" Target="KALEIDESCAPE_SERVER_HOST" Default="" Mode="" Description="IP address of the Kaleidescape MOVIE SERVER that serves the /movies library page (e.g., a Terra at 192.168.1.51). Leave blank if the player and server are the same device." Type="Variable" Display="always" Required="false" Mask="false"/>
 
   <Config Name="Kaleidescape Port" Target="KALEIDESCAPE_PORT" Default="10000" Mode="" Description="Kaleidescape control port" Type="Variable" Display="advanced" Required="false" Mask="false">10000</Config>
 

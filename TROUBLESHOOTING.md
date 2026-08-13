@@ -85,7 +85,7 @@ PLEX_URL=https://plex.example.com:32400
 **Cause**: Cannot connect to Kaleidescape player.
 
 **Solutions**:
-1. Verify `KALEIDESCAPE_HOST` IP address is correct
+1. Verify `KALEIDESCAPE_PLAYER_HOST` IP address is correct
 2. Verify `KALEIDESCAPE_PORT` is 10000 (default)
 3. Check that the player is powered on
 4. Ping the player to verify network connectivity:

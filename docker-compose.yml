@@ -19,7 +19,7 @@ services:
       - NODE_ENV=production
 
       # Kaleidescape Configuration
-      - KALEIDESCAPE_HOST=${KALEIDESCAPE_HOST:-}
+      - KALEIDESCAPE_PLAYER_HOST=${KALEIDESCAPE_PLAYER_HOST:-}
       - KALEIDESCAPE_PORT=${KALEIDESCAPE_PORT:-10000}
 
       # Plex Configuration
