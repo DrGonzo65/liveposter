@@ -314,6 +314,19 @@ Your `KALEIDESCAPE_PLAYER_HOST` is almost certainly pointing at a movie server r
 than a player. See [section 4](#4-kaleidescape-which-address-goes-where), and
 check the startup log for the warning.
 
+### The log says the player is in standby
+
+That's informational, not a fault. A sleeping player answers every query with
+status `020`, so LivePoster notes it once and keeps polling; you'll get a
+matching "is awake" line when it powers on. The slideshow runs from the cached
+library throughout.
+
+### I want to see the raw control-protocol traffic
+
+Set `KALEIDESCAPE_DEBUG=1`. Every command and response is logged, which is
+useful when diagnosing a device that behaves unexpectedly and far too noisy to
+leave on.
+
 ### Kaleidescape won't connect
 
 - Confirm the address: `nc -vz 192.168.1.50 10000`

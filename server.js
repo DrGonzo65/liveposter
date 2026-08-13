@@ -172,6 +172,7 @@ app.get('/api/debug/kaleidescape', (req, res) => {
   res.json({
     connected: client.connected,
     deviceType: client.deviceType,
+    standby: client.standby,
     playbackUnsupported: client.playbackUnsupported,
     state: client.currentState,
     playerHost: client.host,

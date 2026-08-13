@@ -1,6 +1,6 @@
 {
   "name": "liveposter",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Media poster display server for Kaleidescape, Plex, Jellyfin, and Nvidia Shield",
   "main": "server.js",
   "scripts": {
