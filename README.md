@@ -177,7 +177,7 @@ http://localhost:3000
 - `POST /api/movies/toggle-slideshow` - Enable/disable movie in slideshow
 
 ### Settings
-- `GET /api/settings` - Get current configuration
+- `GET /api/settings` - Get current configuration. API keys and tokens are returned masked, never in full
 - `POST /api/settings` - Save configuration to `.cache/settings.json` (persists across container updates)
 
 ## Configuration

@@ -43,6 +43,34 @@ function envValue(name) {
   return process.env[name];
 }
 
+/**
+ * Credential handling for the settings API.
+ *
+ * GET /api/settings never returns a real secret — the management UI only needs
+ * to show whether one is set, and this server has no authentication, so anyone
+ * who can reach it could otherwise harvest every key. Values come back masked;
+ * a mask posted back means "leave this alone".
+ */
+const SECRET_MASK = '•'.repeat(8);
+const SECRET_FIELDS = [
+  ['tmdb', 'apiKey'],
+  ['tmdb', 'readToken'],
+  ['omdb', 'apiKey'],
+  ['plex', 'token'],
+  ['jellyfin', 'apiKey']
+];
+
+function maskSecret(value) {
+  if (!value) return '';
+  const text = String(value);
+  // Keep the last 4 so you can tell which key is loaded without revealing it
+  return text.length > 4 ? SECRET_MASK + text.slice(-4) : SECRET_MASK;
+}
+
+function isMasked(value) {
+  return typeof value === 'string' && value.startsWith(SECRET_MASK);
+}
+
 // Load persistent settings from cache directory (for Docker)
 const settingsFile = path.join(__dirname, '.cache', 'settings.json');
 let persistentSettings = {};
@@ -300,11 +328,11 @@ app.post('/api/movies/toggle-slideshow', express.json(), async (req, res) => {
 app.get('/api/settings', (req, res) => {
   res.json({
     tmdb: {
-      apiKey: config.tmdb.apiKey || '',
-      readToken: config.tmdb.readToken || ''
+      apiKey: maskSecret(config.tmdb.apiKey),
+      readToken: maskSecret(config.tmdb.readToken)
     },
     omdb: {
-      apiKey: config.omdb.apiKey || ''
+      apiKey: maskSecret(config.omdb.apiKey)
     },
     kaleidescape: {
       playerHost: config.kaleidescape.playerHost || '',
@@ -313,11 +341,11 @@ app.get('/api/settings', (req, res) => {
     },
     plex: {
       url: config.plex.url || '',
-      token: config.plex.token || ''
+      token: maskSecret(config.plex.token)
     },
     jellyfin: {
       url: config.jellyfin.url || '',
-      apiKey: config.jellyfin.apiKey || ''
+      apiKey: maskSecret(config.jellyfin.apiKey)
     },
     pollInterval: config.pollInterval || 10000,
     slideshowInterval: config.slideshowInterval || 10000,
@@ -360,26 +388,57 @@ app.post('/api/settings', express.json(), async (req, res) => {
   const settings = req.body;
 
   try {
+    const settingsFile = path.join(__dirname, '.cache', 'settings.json');
+
+    // What's on disk right now, so an untouched secret keeps whatever it had -
+    // including having nothing, when the value actually comes from the
+    // environment. Comparing against the resolved config instead would copy
+    // env/_FILE secrets into settings.json the first time anyone hit Save.
+    let stored = {};
+    if (fs.existsSync(settingsFile)) {
+      try {
+        stored = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+      } catch (error) {
+        console.error('Could not read existing settings, treating as empty:', error.message);
+      }
+    }
+
+    // A masked value means "unchanged". An empty one means "clear it".
+    for (const [section, key] of SECRET_FIELDS) {
+      if (!isMasked(settings[section]?.[key])) continue;
+
+      const previous = stored[section]?.[key];
+      if (previous === undefined) {
+        delete settings[section][key];
+      } else {
+        settings[section][key] = previous;
+      }
+    }
+
     // The mounted cache directory is the single source of truth for saved
     // settings. We deliberately do NOT also write .env: inside a container
     // that path lives in an image layer, so it is lost on every update and
     // would duplicate each credential in a second, unmounted location.
-    const settingsFile = path.join(__dirname, '.cache', 'settings.json');
     fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
-    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), { mode: 0o600 });
     console.log('Settings saved to persistent cache');
 
-    // Update in-memory config immediately (so changes apply without restart)
-    config.tmdb.apiKey = settings.tmdb?.apiKey || '';
-    config.tmdb.readToken = settings.tmdb?.readToken || '';
-    config.omdb.apiKey = settings.omdb?.apiKey || '';
+    // Update in-memory config immediately (so changes apply without restart).
+    // A secret dropped above (still supplied by the environment) must keep its
+    // resolved value rather than being blanked.
+    const keepIfAbsent = (incoming, current) => (incoming === undefined ? current : incoming || '');
+
+    config.tmdb.apiKey = keepIfAbsent(settings.tmdb?.apiKey, config.tmdb.apiKey);
+    config.tmdb.readToken = keepIfAbsent(settings.tmdb?.readToken, config.tmdb.readToken);
+    config.omdb.apiKey = keepIfAbsent(settings.omdb?.apiKey, config.omdb.apiKey);
+    config.plex.token = keepIfAbsent(settings.plex?.token, config.plex.token);
+    config.jellyfin.apiKey = keepIfAbsent(settings.jellyfin?.apiKey, config.jellyfin.apiKey);
+
     config.kaleidescape.playerHost = settings.kaleidescape?.playerHost || '';
     config.kaleidescape.port = parseInt(settings.kaleidescape?.port) || 10000;
     config.kaleidescape.serverHost = settings.kaleidescape?.serverHost || '';
     config.plex.url = settings.plex?.url || '';
-    config.plex.token = settings.plex?.token || '';
     config.jellyfin.url = settings.jellyfin?.url || '';
-    config.jellyfin.apiKey = settings.jellyfin?.apiKey || '';
     config.pollInterval = parseInt(settings.pollInterval) || 10000;
     config.slideshowInterval = parseInt(settings.slideshowInterval) || 10000;
     config.displayScale = parseFloat(settings.displayScale) || 1.0;

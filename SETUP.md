@@ -281,9 +281,23 @@ Once loaded:
 
 ### Security
 
-LivePoster has **no authentication of any kind**. Anyone who can reach it can view
-the settings page. It's built for a trusted home network — don't port-forward it
-or expose it to the internet.
+LivePoster has **no authentication of any kind**. Anyone who can reach it can open
+the settings page and change your configuration. It's built for a trusted home
+network — don't port-forward it or expose it to the internet.
+
+Your credentials are handled as follows:
+
+- The settings API never returns a key in full. Saved keys come back masked
+  (`••••••••` plus the last four characters), so a reader on your network can't
+  harvest them.
+- Keys supplied through environment variables or Docker secrets stay there. They
+  are never copied into `.cache/settings.json`, even when you save from the UI.
+- Keys entered through the UI are written to `.cache/settings.json` with `0600`
+  permissions.
+
+This protects against reading credentials, not against writing them. Anyone who
+can reach the server can still change settings, so treat network access as
+equivalent to admin access.
 
 ---
 

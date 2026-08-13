@@ -512,15 +512,25 @@
       </div>
 
       <form class="settings-form" onsubmit="saveSettings(event)">
+        <div class="settings-section" style="border-color:#3b4a6b; background:#1e2434;">
+          <small style="color:#9db2e0; display:block; line-height:1.5;">
+            Saved keys are shown masked (<code>••••••••</code> plus the last four
+            characters). Leave a masked field untouched to keep the existing key,
+            type a new value to replace it, or clear the field to remove it.
+            Keys supplied by environment variables stay in the environment and
+            are never written to disk.
+          </small>
+        </div>
+
         <div class="settings-section">
           <h3>TMDb Configuration</h3>
           <div class="form-group">
             <label for="tmdb-key">TMDb API Key</label>
-            <input type="text" id="tmdb-key" placeholder="Your TMDb API key">
+            <input type="password" autocomplete="off" id="tmdb-key" placeholder="Your TMDb API key">
           </div>
           <div class="form-group">
             <label for="tmdb-token">TMDb Read Access Token (required for API calls)</label>
-            <input type="text" id="tmdb-token" placeholder="Your TMDb read access token">
+            <input type="password" autocomplete="off" id="tmdb-token" placeholder="Your TMDb read access token">
             <small style="color: #888; display: block; margin-top: 5px;">Get this from TMDb Settings → API → "API Read Access Token"</small>
           </div>
         </div>
@@ -529,7 +539,7 @@
           <h3>OMDb Configuration (Rotten Tomatoes)</h3>
           <div class="form-group">
             <label for="omdb-key">OMDb API Key</label>
-            <input type="text" id="omdb-key" placeholder="Your OMDb API key">
+            <input type="password" autocomplete="off" id="omdb-key" placeholder="Your OMDb API key">
           </div>
         </div>
 
@@ -559,7 +569,7 @@
           </div>
           <div class="form-group">
             <label for="plex-token">Authentication Token</label>
-            <input type="text" id="plex-token" placeholder="Your Plex token">
+            <input type="password" autocomplete="off" id="plex-token" placeholder="Your Plex token">
           </div>
         </div>
 
@@ -571,7 +581,7 @@
           </div>
           <div class="form-group">
             <label for="jellyfin-key">API Key</label>
-            <input type="text" id="jellyfin-key" placeholder="Your Jellyfin API key">
+            <input type="password" autocomplete="off" id="jellyfin-key" placeholder="Your Jellyfin API key">
           </div>
         </div>
 
