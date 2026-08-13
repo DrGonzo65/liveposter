@@ -29,7 +29,12 @@ A media poster display server that monitors your home theater systems (Kaleidesc
 **New here? Start with [SETUP.md](SETUP.md)** — a step-by-step guide covering
 credentials, working out which Kaleidescape address goes where, and first run.
 
-### Option 1: Docker (Recommended)
+### Option 1: Unraid (Community Applications)
+
+Search for **LivePoster** in the Apps tab and click Install. All settings are
+exposed as template fields; see [UNRAID-QUICKSTART.md](UNRAID-QUICKSTART.md).
+
+### Option 2: Docker (Recommended elsewhere)
 
 A prebuilt image is published, so there's nothing to compile:
 
@@ -51,7 +56,7 @@ http://localhost:3000/manage.html
 See [DOCKER.md](DOCKER.md) for secrets, updating, and building your own image,
 or [UNRAID-QUICKSTART.md](UNRAID-QUICKSTART.md) for Unraid.
 
-### Option 2: Node.js
+### Option 3: Node.js
 
 1. Install dependencies:
 ```bash

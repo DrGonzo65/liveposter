@@ -1,0 +1,13 @@
+<CommunityApplications>
+  <Profile>
+    Apps by DrGonzo65.
+
+    **LivePoster** turns any screen into a movie poster display for your home theatre.
+    It watches Kaleidescape, Plex and Jellyfin, shows the poster for whatever is
+    playing, and cycles your library as a "Coming Soon" slideshow when nothing is.
+
+    Support and bug reports: https://github.com/DrGonzo65/liveposter/issues
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/DrGonzo65/liveposter/master/icon.svg</Icon>
+  <WebPage>https://github.com/DrGonzo65/liveposter</WebPage>
+</CommunityApplications>
