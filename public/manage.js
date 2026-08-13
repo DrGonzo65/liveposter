@@ -624,28 +624,47 @@ async function saveSettings(event) {
 }
 
 async function clearCache() {
-  if (!confirm('This will clear all cached metadata and restart the server. The server will re-fetch all movie data from TMDb, which may take a few minutes. Continue?')) {
+  if (!confirm('Clear all cached metadata and re-fetch it from TMDb?\n\nThis takes a few minutes for a large library. The poster display keeps running on the existing metadata until the rebuild finishes.')) {
     return;
   }
 
   try {
-    const response = await fetch('/api/clear-cache', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
+    const response = await fetch('/api/clear-cache', { method: 'POST' });
     const result = await response.json();
 
-    if (result.success) {
-      alert('Cache cleared! Server is restarting...\n\nPlease wait about 30 seconds for the server to reload all metadata, then refresh this page.');
-      closeSettings();
-    } else {
+    if (!result.success) {
       alert('Error clearing cache: ' + (result.error || 'Unknown error'));
+      return;
     }
+
+    closeSettings();
+    watchRebuild();
   } catch (error) {
     console.error('Error clearing cache:', error);
-    alert('Cache cleared and server is restarting. Please wait about 30 seconds, then refresh this page.');
+    alert('Error clearing cache: ' + error.message);
   }
+}
+
+/**
+ * Poll until the background rebuild finishes, then refresh the grid.
+ * The server no longer restarts, so there is nothing to wait out blindly.
+ */
+async function watchRebuild() {
+  const grid = document.getElementById('movies-grid');
+  grid.innerHTML = '<div class="loading">Rebuilding metadata from TMDb… this can take a few minutes. The display keeps running.</div>';
+
+  for (let i = 0; i < 600; i++) {           // give up after ~20 minutes
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const status = await (await fetch('/api/loading')).json();
+      if (!status.rebuilding) {
+        await loadMovies();
+        return;
+      }
+    } catch (error) {
+      // server busy mid-rebuild; keep waiting
+    }
+  }
+
+  grid.innerHTML = '<div class="loading">Rebuild is taking unusually long — check the container log.</div>';
 }

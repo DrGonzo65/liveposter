@@ -259,6 +259,7 @@ app.get('/api/loading', (req, res) => {
 
   res.json({
     ready: isServerReady,
+    rebuilding: !!monitor.isRebuilding,
     progress: loadingProgress,
     needsSetup,
     configured: {
@@ -391,13 +392,21 @@ app.post('/api/clear-cache', express.json(), async (req, res) => {
       console.log('Cache cleared by user');
     }
 
-    res.json({ success: true, message: 'Cache cleared. Server will restart...' });
+    if (monitor.isRebuilding) {
+      return res.status(409).json({ error: 'A metadata rebuild is already running' });
+    }
 
-    // Restart the server after a short delay
-    setTimeout(() => {
-      console.log('Restarting server to reload cache...');
-      process.exit(0);
-    }, 500);
+    res.json({
+      success: true,
+      message: 'Cache cleared. Rebuilding metadata in the background — the display keeps running.'
+    });
+
+    // Rebuild in place. This used to call process.exit(0) and rely on the
+    // container being restarted from outside, which on many setups just
+    // stopped the app.
+    monitor.clearCacheAndReload().catch(error => {
+      console.error('Rebuild after cache clear failed:', error.message);
+    });
   } catch (error) {
     console.error('Error clearing cache:', error);
     res.status(500).json({ error: error.message });
