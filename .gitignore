@@ -4,3 +4,8 @@ node_modules/
 *.log
 .cache/
 *.tar
+
+# Editor swap files
+*.swp
+*.swo
+*~
