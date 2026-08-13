@@ -12,3 +12,14 @@ README.md
 .claude
 # Local diagnostic scripts - not needed at runtime
 test-*.js
+
+# Packaging and listing assets - consumed from GitHub, never served by the app.
+# public/ has its own images and is NOT affected by these.
+icon.png
+icon.svg
+screenshot.png
+ca_profile.xml
+templates
+build-docker.sh
+docker-compose.yml
+LICENSE
