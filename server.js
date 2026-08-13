@@ -84,8 +84,27 @@ if (fs.existsSync(settingsFile)) {
   }
 }
 
+/**
+ * Whether a media system is switched on. Defaults to on, so existing installs
+ * behave exactly as before. Set <NAME>_ENABLED=false to disable one without
+ * clearing its credentials.
+ */
+function sourceEnabled(name, envName) {
+  const saved = persistentSettings.sources?.[name];
+  if (typeof saved === 'boolean') return saved;
+
+  const fromEnv = envValue(envName);
+  if (fromEnv === undefined || fromEnv === '') return true;
+  return !/^(false|0|no|off)$/i.test(String(fromEnv).trim());
+}
+
 // Configuration from environment variables (with persistent settings override)
 const config = {
+  sources: {
+    kaleidescape: sourceEnabled('kaleidescape', 'KALEIDESCAPE_ENABLED'),
+    plex: sourceEnabled('plex', 'PLEX_ENABLED'),
+    jellyfin: sourceEnabled('jellyfin', 'JELLYFIN_ENABLED')
+  },
   kaleidescape: {
     // The player answers play-status queries; the server holds the movie library.
     // On an all-in-one system (e.g. Strato V) leave serverHost unset.
@@ -335,6 +354,7 @@ app.get('/api/settings', (req, res) => {
     omdb: {
       apiKey: maskSecret(config.omdb.apiKey)
     },
+    sources: config.sources,
     kaleidescape: {
       playerHost: config.kaleidescape.playerHost || '',
       port: config.kaleidescape.port || 10000,
@@ -416,6 +436,19 @@ app.post('/api/settings', express.json(), async (req, res) => {
       }
     }
 
+    // Merge over what's stored rather than replacing it. The settings UI posts
+    // every field, but anything posting a subset (a script, or a future partial
+    // save) would otherwise blank every field it didn't mention.
+    const SECTIONS = ['tmdb', 'omdb', 'kaleidescape', 'plex', 'jellyfin', 'sources'];
+    for (const section of SECTIONS) {
+      if (stored[section] || settings[section]) {
+        settings[section] = { ...stored[section], ...settings[section] };
+      }
+    }
+    for (const [key, value] of Object.entries(stored)) {
+      if (!SECTIONS.includes(key) && settings[key] === undefined) settings[key] = value;
+    }
+
     // The mounted cache directory is the single source of truth for saved
     // settings. We deliberately do NOT also write .env: inside a container
     // that path lives in an image layer, so it is lost on every update and
@@ -435,15 +468,52 @@ app.post('/api/settings', express.json(), async (req, res) => {
     config.plex.token = keepIfAbsent(settings.plex?.token, config.plex.token);
     config.jellyfin.apiKey = keepIfAbsent(settings.jellyfin?.apiKey, config.jellyfin.apiKey);
 
-    config.kaleidescape.playerHost = settings.kaleidescape?.playerHost || '';
-    config.kaleidescape.port = parseInt(settings.kaleidescape?.port) || 10000;
-    config.kaleidescape.serverHost = settings.kaleidescape?.serverHost || '';
-    config.plex.url = settings.plex?.url || '';
-    config.jellyfin.url = settings.jellyfin?.url || '';
-    config.pollInterval = parseInt(settings.pollInterval) || 10000;
-    config.slideshowInterval = parseInt(settings.slideshowInterval) || 10000;
-    config.displayScale = parseFloat(settings.displayScale) || 1.0;
-    config.allowedRatings = settings.allowedRatings || ['G', 'PG', 'PG-13', 'R', 'NC-17', 'NR'];
+    // Same rule for non-secrets: a field the payload didn't mention keeps its
+    // current value, which may have come from the environment rather than disk.
+    config.kaleidescape.playerHost = keepIfAbsent(settings.kaleidescape?.playerHost, config.kaleidescape.playerHost);
+    config.kaleidescape.serverHost = keepIfAbsent(settings.kaleidescape?.serverHost, config.kaleidescape.serverHost);
+    config.plex.url = keepIfAbsent(settings.plex?.url, config.plex.url);
+    config.jellyfin.url = keepIfAbsent(settings.jellyfin?.url, config.jellyfin.url);
+
+    if (settings.kaleidescape?.port !== undefined) {
+      config.kaleidescape.port = parseInt(settings.kaleidescape.port) || 10000;
+    }
+    if (settings.pollInterval !== undefined) {
+      config.pollInterval = parseInt(settings.pollInterval) || 10000;
+    }
+    if (settings.slideshowInterval !== undefined) {
+      config.slideshowInterval = parseInt(settings.slideshowInterval) || 30000;
+    }
+    if (settings.displayScale !== undefined) {
+      config.displayScale = parseFloat(settings.displayScale) || 1.0;
+    }
+    if (settings.allowedRatings !== undefined) {
+      config.allowedRatings = settings.allowedRatings || ['G', 'PG', 'PG-13', 'R', 'NC-17', 'NR'];
+    }
+
+    if (settings.sources) {
+      const wasEnabled = { ...config.sources };
+      config.sources = {
+        kaleidescape: settings.sources.kaleidescape !== false,
+        plex: settings.sources.plex !== false,
+        jellyfin: settings.sources.jellyfin !== false
+      };
+
+      // Turning one off applies immediately: the poll loop and the combined
+      // library both consult config.sources. Turning one back on may need a
+      // client that was never built, so ask the monitor to catch up.
+      const switchedOn = Object.keys(config.sources)
+        .filter(name => config.sources[name] && !wasEnabled[name]);
+
+      console.log(`Sources enabled: ${Object.entries(config.sources)
+        .filter(([, on]) => on).map(([name]) => name).join(', ') || 'none'}`);
+
+      if (switchedOn.length > 0) {
+        monitor.activateSources(switchedOn);
+      } else {
+        monitor.rebuildCombinedLibrary();
+      }
+    }
 
     console.log(`Settings updated - Display scale: ${config.displayScale}x, Allowed ratings: ${config.allowedRatings.join(', ')}`);
 

@@ -205,6 +205,7 @@ file containing the value — see [Docker secrets](DOCKER.md#docker-secrets).
 | `POLL_INTERVAL` | How often to check for playback (ms, default 10000) |
 | `SLIDESHOW_INTERVAL` | How often to change slides when idle (ms, default 30000) |
 | `DISPLAY_SCALE` | Text scaling for the display (default 1.0) |
+| `KALEIDESCAPE_ENABLED` / `PLEX_ENABLED` / `JELLYFIN_ENABLED` | Set to `false` to switch a system off without clearing its settings (default on) |
 | `KALEIDESCAPE_DEBUG` | Set to `1` to log every control-protocol message. Off by default — it's two lines per command per poll |
 
 ## Troubleshooting

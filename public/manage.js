@@ -474,6 +474,11 @@ async function openSettings() {
     document.getElementById('jellyfin-url').value = settings.jellyfin?.url || '';
     document.getElementById('jellyfin-key').value = settings.jellyfin?.apiKey || '';
 
+    // Media system toggles (absent means enabled, matching the server default)
+    document.getElementById('source-kaleidescape').checked = settings.sources?.kaleidescape !== false;
+    document.getElementById('source-plex').checked = settings.sources?.plex !== false;
+    document.getElementById('source-jellyfin').checked = settings.sources?.jellyfin !== false;
+
     // The masked placeholder isn't a secret, so it's shown as plain text -
     // that's the only way the last four characters are actually readable.
     // The field flips to password as soon as a real key is being typed.
@@ -516,6 +521,11 @@ async function saveSettings(event) {
   event.preventDefault();
 
   const settings = {
+    sources: {
+      kaleidescape: document.getElementById('source-kaleidescape').checked,
+      plex: document.getElementById('source-plex').checked,
+      jellyfin: document.getElementById('source-jellyfin').checked
+    },
     tmdb: {
       apiKey: document.getElementById('tmdb-key').value,
       readToken: document.getElementById('tmdb-token').value
