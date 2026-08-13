@@ -368,6 +368,36 @@ document.getElementById('settings-modal').addEventListener('click', (e) => {
   }
 });
 
+const SECRET_MASK_PREFIX = '••••';
+
+/**
+ * Credential fields hold a server-side mask like "••••••••1a2b" until you type.
+ *
+ * The mask must render as plain text or the browser bullets out the very
+ * last-four characters that make it useful. Once the value stops being the
+ * mask, the field is holding a real key and switches to password.
+ */
+function initSecretField(id) {
+  const field = document.getElementById(id);
+  if (!field) return;
+
+  const applyType = () => {
+    const isMask = field.value === '' || field.value.startsWith(SECRET_MASK_PREFIX);
+    field.type = isMask ? 'text' : 'password';
+  };
+
+  applyType();
+
+  if (field.dataset.secretBound) return;   // openSettings() can run repeatedly
+  field.dataset.secretBound = 'true';
+
+  // Select the mask so typing replaces it outright rather than appending
+  field.addEventListener('focus', () => {
+    if (field.value.startsWith(SECRET_MASK_PREFIX)) field.select();
+  });
+  field.addEventListener('input', applyType);
+}
+
 // Settings Management
 async function openSettings() {
   try {
@@ -385,6 +415,12 @@ async function openSettings() {
     document.getElementById('plex-token').value = settings.plex?.token || '';
     document.getElementById('jellyfin-url').value = settings.jellyfin?.url || '';
     document.getElementById('jellyfin-key').value = settings.jellyfin?.apiKey || '';
+
+    // The masked placeholder isn't a secret, so it's shown as plain text -
+    // that's the only way the last four characters are actually readable.
+    // The field flips to password as soon as a real key is being typed.
+    ['tmdb-key', 'tmdb-token', 'omdb-key', 'plex-token', 'jellyfin-key']
+      .forEach(initSecretField);
     // Convert milliseconds to seconds for display
     document.getElementById('poll-interval').value = (settings.pollInterval || 10000) / 1000;
     document.getElementById('slideshow-interval').value = (settings.slideshowInterval || 30000) / 1000;
