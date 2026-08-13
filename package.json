@@ -14,8 +14,19 @@
     "plex",
     "jellyfin"
   ],
-  "author": "",
+  "author": "Nick Shortway (https://github.com/DrGonzo65)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DrGonzo65/liveposter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DrGonzo65/liveposter/issues"
+  },
+  "homepage": "https://github.com/DrGonzo65/liveposter#readme",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "axios": "^1.6.0",
     "cors": "^2.8.5",

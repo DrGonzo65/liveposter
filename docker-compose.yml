@@ -1,43 +1,50 @@
-version: '3.8'
-
 services:
   liveposter:
-    image: liveposter:latest
-    build: .
+    image: drgonzo65/liveposter:latest
+    # To run your own build instead, uncomment this and use `docker compose build`
+    # build: .
     container_name: liveposter
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      # Mount cache directory for persistent metadata
+      # Metadata cache AND saved settings. Keep this mapped, or you re-scan
+      # your library and lose UI-saved settings on every update.
       - ./cache:/app/.cache
-      # Mount .env file for configuration (optional - can use environment variables instead)
-      - ./.env:/app/.env:ro
     environment:
       # Server Configuration
       - PORT=3000
       - NODE_ENV=production
 
-      # Kaleidescape Configuration
+      # Kaleidescape
+      # PLAYER_HOST reports what's playing; SERVER_HOST holds the movie library.
+      # Leave SERVER_HOST unset on an all-in-one system such as a Strato V.
       - KALEIDESCAPE_PLAYER_HOST=${KALEIDESCAPE_PLAYER_HOST:-}
+      - KALEIDESCAPE_SERVER_HOST=${KALEIDESCAPE_SERVER_HOST:-}
       - KALEIDESCAPE_PORT=${KALEIDESCAPE_PORT:-10000}
 
-      # Plex Configuration
+      # Plex
       - PLEX_URL=${PLEX_URL:-}
       - PLEX_TOKEN=${PLEX_TOKEN:-}
 
-      # Jellyfin Configuration
+      # Jellyfin
       - JELLYFIN_URL=${JELLYFIN_URL:-}
       - JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
 
-      # TMDb Configuration
+      # TheMovieDB - both values are required
       - TMDB_API_KEY=${TMDB_API_KEY:-}
       - TMDB_READ_TOKEN=${TMDB_READ_TOKEN:-}
 
-      # OMDb Configuration
+      # OMDb (optional - Rotten Tomatoes scores)
       - OMDB_API_KEY=${OMDB_API_KEY:-}
 
-      # Polling Settings
+      # Polling
       - POLL_INTERVAL=${POLL_INTERVAL:-10000}
-      - SLIDESHOW_INTERVAL=${SLIDESHOW_INTERVAL:-10000}
+      - SLIDESHOW_INTERVAL=${SLIDESHOW_INTERVAL:-30000}
+
+      # Display
+      - DISPLAY_SCALE=${DISPLAY_SCALE:-1.0}
     network_mode: bridge
+
+# Any variable above can be supplied from a file instead, using the
+# <NAME>_FILE convention - see the Docker Secrets section of DOCKER.md.

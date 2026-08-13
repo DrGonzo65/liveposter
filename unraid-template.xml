@@ -11,9 +11,7 @@
   <Category>MediaApp:Video MediaServer:Video</Category>
   <WebUI>http://[IP]:[PORT:3000]</WebUI>
   <TemplateURL/>
-  <!-- Add an icon.png to the repo root, then uncomment (branch must match):
   <Icon>https://raw.githubusercontent.com/DrGonzo65/liveposter/master/icon.png</Icon>
-  -->
   <Description>
     LivePoster monitors your media systems and displays beautiful movie posters on any screen.
 

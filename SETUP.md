@@ -219,11 +219,21 @@ detected through that server.
 
 ## 6. Running it
 
-### Docker Compose
+### Docker (recommended)
+
+A prebuilt image is published — nothing to compile.
 
 ```bash
 cp .env.example .env    # then edit .env with your values
-docker-compose up -d
+docker compose up -d
+```
+
+Or without compose:
+
+```bash
+docker run -d --name liveposter -p 3000:3000 \
+  -v ./cache:/app/.cache --env-file .env \
+  drgonzo65/liveposter:latest
 ```
 
 ### Unraid

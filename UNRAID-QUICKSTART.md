@@ -4,42 +4,25 @@
 
 - Unraid 6.9 or later
 - At least one media system (Kaleidescape, Plex, or Jellyfin)
-- TMDb API key (free from https://www.themoviedb.org/settings/api)
+- TMDb API key and read token (free from https://www.themoviedb.org/settings/api)
+
+Nothing needs to be built or copied to your server — LivePoster is published as
+a prebuilt image on Docker Hub. See
+[Building it yourself](#appendix-building-the-image-yourself) if you'd rather
+build from source.
 
 ## Installation Steps
 
-### Step 1: Copy Files to Unraid
+### Step 1: Create the Container
 
-1. SSH into your Unraid server or use the built-in terminal
-2. Create the application directory:
-```bash
-mkdir -p /mnt/user/appdata/liveposter
-cd /mnt/user/appdata/liveposter
-```
-
-3. Copy all LivePoster files to this directory (via SSH, SMB share, or your preferred method)
-
-### Step 2: Build the Docker Image
-
-```bash
-cd /mnt/user/appdata/liveposter
-docker build -t liveposter:latest .
-```
-
-This will take a few minutes on first build.
-
-### Step 3: Create the Container
-
-#### Option A: Using Unraid Docker UI (Recommended)
-
-1. Go to Docker tab in Unraid
-2. Click "Add Container"
+1. Go to the **Docker** tab in Unraid
+2. Click **Add Container**
 3. Fill in the following:
 
 **Basic Settings:**
 - Name: `liveposter`
-- Repository: `liveposter:latest`
-- Icon URL: (leave blank or use your own)
+- Repository: `drgonzo65/liveposter:latest`
+- Icon URL: `https://raw.githubusercontent.com/DrGonzo65/liveposter/master/icon.png`
 
 **Network:**
 - Network Type: `Bridge`
@@ -58,22 +41,21 @@ Add these variables (adjust values for your setup):
 - `KALEIDESCAPE_PORT` = `10000`
 - `KALEIDESCAPE_SERVER_HOST` = `192.168.1.51` (the **movie server** - serves the library page; omit if one device)
 - `TMDB_API_KEY` = `your-tmdb-api-key`
+- `TMDB_READ_TOKEN` = `your-tmdb-read-token`
 - `OMDB_API_KEY` = `your-omdb-api-key` (optional)
 - `PLEX_URL` = `http://192.168.1.60:32400` (optional)
 - `PLEX_TOKEN` = `your-plex-token` (optional)
 - `JELLYFIN_URL` = `http://192.168.1.61:8096` (optional)
 - `JELLYFIN_API_KEY` = `your-jellyfin-key` (optional)
 
-4. Click "Apply"
+4. Click **Apply**. Unraid pulls the image and starts the container.
 
-#### Option B: Using Docker Compose
+> Not sure which Kaleidescape address goes where? A movie server and a player
+> answer different things, and getting them backwards means the slideshow works
+> but "Now Playing" never appears. [SETUP.md](SETUP.md#4-kaleidescape-which-address-goes-where)
+> has commands that identify each device.
 
-1. Install "Compose Manager" plugin from Community Applications
-2. Edit the `docker-compose.yml` file in `/mnt/user/appdata/liveposter`
-3. Update environment variables with your settings
-4. In Compose Manager, add the compose file and start the stack
-
-### Step 4: Access and Configure
+### Step 2: Access and Configure
 
 1. **Open the display:**
    - Navigate to: `http://your-unraid-ip:3000`
@@ -93,11 +75,13 @@ Add these variables (adjust values for your setup):
 
 ## Getting API Keys
 
-### TMDb API Key (Required)
+### TMDb (Required — you need **both** values)
 1. Create account at https://www.themoviedb.org/
 2. Go to Settings → API
 3. Request an API key (choose "Developer")
-4. Copy the "API Key (v3 auth)" value
+4. Copy **both**: the "API Key (v3 auth)" → `TMDB_API_KEY`, and the
+   "API Read Access Token (v4 auth)" → `TMDB_READ_TOKEN`. LivePoster needs
+   both, and will keep showing the Setup screen if either is missing.
 
 ### OMDb API Key (Optional - for Rotten Tomatoes)
 1. Go to http://www.omdbapi.com/apikey.aspx
@@ -120,15 +104,18 @@ Add these variables (adjust values for your setup):
 
 ## Updating the Container
 
-When you pull new code or make changes:
+In the Unraid Docker tab, click the LivePoster icon → **Force Update**. That's it.
+
+Your settings and metadata cache live in the mapped `/app/.cache` volume, so
+they survive updates.
+
+From the command line:
 
 ```bash
-cd /mnt/user/appdata/liveposter
-docker stop liveposter
-docker rm liveposter
-docker build -t liveposter:latest .
-# Then recreate container via UI or compose
+docker pull drgonzo65/liveposter:latest
 ```
+
+Then restart the container from the Unraid UI.
 
 ## Accessing Logs
 
@@ -175,8 +162,8 @@ Or in Unraid Docker UI, click the container icon → Logs
 
 For issues or questions:
 - Check the logs first
-- Review DOCKER.md for more detailed information
-- Open an issue on GitHub (if applicable)
+- Review [DOCKER.md](DOCKER.md) for more detailed information
+- Open an issue: https://github.com/DrGonzo65/liveposter/issues
 
 ## Using with Other Displays
 
@@ -187,3 +174,26 @@ LivePoster works great with:
 - Cast to Chromecast or similar (experimental)
 
 Just navigate to `http://your-unraid-ip:3000` from any device on your network!
+
+## Appendix: Building the Image Yourself
+
+Only needed if you've modified the source or want to run your own build. The
+published image covers the normal case.
+
+1. SSH into Unraid and copy the project there:
+```bash
+mkdir -p /mnt/user/appdata/liveposter-src
+cd /mnt/user/appdata/liveposter-src
+git clone https://github.com/DrGonzo65/liveposter.git .
+```
+
+2. Build it:
+```bash
+docker build -t liveposter:latest .
+```
+
+3. Create the container exactly as in Step 1, but set **Repository** to
+   `liveposter:latest` instead of `drgonzo65/liveposter:latest`.
+
+To update afterwards, `git pull` and rebuild — Force Update won't help, since
+there's no registry to pull from.

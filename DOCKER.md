@@ -1,10 +1,31 @@
 # LivePoster Docker Deployment
 
+LivePoster is published as a prebuilt image, so there's nothing to compile:
+
+```bash
+docker pull drgonzo65/liveposter:latest
+```
+
 ## Quick Start with Docker Compose
 
-1. **Clone the repository** or copy all files to your desired location
+1. **Create a `docker-compose.yml`**:
 
-2. **Create a `.env` file** with your configuration (or use the settings UI after starting):
+```yaml
+services:
+  liveposter:
+    image: drgonzo65/liveposter:latest
+    container_name: liveposter
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Metadata cache AND saved settings - map this to keep them across updates
+      - ./cache:/app/.cache
+    env_file: .env
+```
+
+2. **Create a `.env` file** alongside it (or configure through the settings UI
+   after starting):
 ```bash
 # Kaleidescape Configuration
 # PLAYER_HOST answers play-status queries; SERVER_HOST is the movie server
@@ -32,63 +53,64 @@ POLL_INTERVAL=10000
 SLIDESHOW_INTERVAL=10000
 ```
 
-3. **Build and run**:
+3. **Start it**:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 4. **Access the application**:
 - Main display: http://your-server-ip:3000
 - Management interface: http://your-server-ip:3000/manage.html
 
+## Plain Docker
+
+Without compose:
+
+```bash
+docker run -d \
+  --name liveposter \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -v /path/to/liveposter/cache:/app/.cache \
+  --env-file .env \
+  drgonzo65/liveposter:latest
+```
+
 ## Unraid Deployment
 
-### Method 1: Docker Compose (Recommended)
+See [UNRAID-QUICKSTART.md](UNRAID-QUICKSTART.md) for the step-by-step version.
+In short: **Add Container**, set Repository to `drgonzo65/liveposter:latest`,
+map `/app/.cache` to somewhere under `/mnt/user/appdata/`, and add your
+environment variables.
 
-1. Install the "Compose Manager" plugin from Community Applications
-2. Copy the entire project folder to your Unraid server (e.g., `/mnt/user/appdata/liveposter`)
-3. Create or edit the `.env` file with your settings
-4. In Compose Manager, add the compose file location
-5. Start the stack
+## Updating
 
-### Method 2: Unraid Docker Template
-
-Add a new container in Unraid's Docker tab with these settings:
-
-**Basic Settings:**
-- **Name**: `liveposter`
-- **Repository**: `liveposter:latest` (after building locally)
-- **Network Type**: `Bridge`
-- **Port Mapping**: `3000` → `3000` (Container Port → Host Port)
-
-**Volume Mappings:**
-- **Container Path**: `/app/.cache`
-  - **Host Path**: `/mnt/user/appdata/liveposter/cache`
-  - **Access Mode**: `Read/Write`
-  - **Description**: Persistent metadata cache
-
-**Environment Variables:**
-- `KALEIDESCAPE_PLAYER_HOST` = `192.168.1.50`
-- `KALEIDESCAPE_PORT` = `10000`
-- `PLEX_URL` = `http://192.168.1.60:32400` (optional)
-- `PLEX_TOKEN` = `your-token` (optional)
-- `JELLYFIN_URL` = `http://192.168.1.61:8096` (optional)
-- `JELLYFIN_API_KEY` = `your-key` (optional)
-- `TMDB_API_KEY` = `your-key`
-- `OMDB_API_KEY` = `your-key` (optional)
-- `POLL_INTERVAL` = `10000`
-- `SLIDESHOW_INTERVAL` = `10000`
-
-### Building the Image on Unraid
-
-1. SSH into your Unraid server
-2. Navigate to the project directory:
 ```bash
-cd /mnt/user/appdata/liveposter
+docker compose pull && docker compose up -d
 ```
-3. Build the Docker image:
+
+On Unraid, click the container icon → **Force Update**.
+
+Your settings and metadata cache live in the mounted `/app/.cache` volume, so
+they survive updates.
+
+## Building the Image Yourself
+
+Only needed if you've modified the source.
+
 ```bash
+git clone https://github.com/DrGonzo65/liveposter.git
+cd liveposter
 docker build -t liveposter:latest .
+```
+
+Then use `liveposter:latest` in place of `drgonzo65/liveposter:latest`.
+
+Multi-arch build and publish:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t <your-user>/liveposter:latest --push .
 ```
 
 ## Configuration via Web UI
@@ -145,23 +167,6 @@ The container needs network access to:
 - External APIs: TheMovieDB (api.themoviedb.org), OMDb (www.omdbapi.com)
 
 Use `network_mode: bridge` or `host` depending on your setup. Bridge mode is recommended for Unraid.
-
-## Updating the Container
-
-1. Stop the container
-2. Rebuild the image:
-```bash
-docker-compose build --no-cache
-docker-compose up -d
-```
-
-Or if using Unraid Docker UI:
-```bash
-docker stop liveposter
-docker rm liveposter
-docker build -t liveposter:latest .
-# Then recreate the container via Unraid UI
-```
 
 ## Troubleshooting
 
