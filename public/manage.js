@@ -8,10 +8,18 @@ let renderedMovies = [];   // the filtered list currently drawn in the grid
 document.addEventListener('DOMContentLoaded', () => {
   loadMovies();
 
-  // Set up filters
-  document.getElementById('source-filter').addEventListener('change', filterMovies);
-  document.getElementById('quality-filter').addEventListener('change', filterMovies);
-  document.getElementById('search-input').addEventListener('input', filterMovies);
+  // Only the source filter needs a round trip; the rest filter what's loaded
+  document.getElementById('source-filter').addEventListener('change', loadMovies);
+  document.getElementById('quality-filter').addEventListener('change', applyFilters);
+  document.getElementById('search-input').addEventListener('input', applyFilters);
+
+  // Stat boxes double as quality filters
+  document.querySelectorAll('.stat-filter').forEach(box => {
+    box.addEventListener('click', () => {
+      document.getElementById('quality-filter').value = box.dataset.quality;
+      applyFilters();
+    });
+  });
 });
 
 async function loadMovies() {
@@ -22,7 +30,10 @@ async function loadMovies() {
 
     allMovies = data.movies;
     updateStats();
-    displayMovies(allMovies);
+
+    // Re-apply whatever the user had selected. Showing everything here is what
+    // made the grid jump back to the full list after correcting a title.
+    applyFilters();
   } catch (error) {
     console.error('Error loading movies:', error);
     document.getElementById('movies-grid').innerHTML = '<div class="loading">Error loading movies</div>';
@@ -133,24 +144,23 @@ function displayMovies(movies) {
   }).join('');
 }
 
-function filterMovies() {
-  const source = document.getElementById('source-filter').value;
+/**
+ * Filter the already-loaded list and redraw. Never refetches, so it is safe to
+ * call from anywhere - including after a reload, which is what keeps the
+ * current view intact when a title is corrected.
+ */
+function applyFilters() {
   const quality = document.getElementById('quality-filter').value;
   const searchText = document.getElementById('search-input').value.toLowerCase();
 
-  // Reload if source changed
-  if (source !== 'all') {
-    loadMovies();
-    return;
-  }
-
   let filtered = allMovies;
 
-  // Filter by quality
   if (quality !== 'all') {
     filtered = filtered.filter(movie => {
       const q = movie.metadataQuality;
       switch (quality) {
+        case 'complete':
+          return q.complete;
         case 'incomplete':
           return !q.complete;
         case 'no-poster':
@@ -165,14 +175,23 @@ function filterMovies() {
     });
   }
 
-  // Filter by search text
   if (searchText) {
+    // Titles are stored entity-encoded, so search what the user actually sees
     filtered = filtered.filter(movie =>
-      movie.title.toLowerCase().includes(searchText)
+      decodeEntities(movie.title).toLowerCase().includes(searchText)
     );
   }
 
+  // Highlight the stat box matching the active filter
+  document.querySelectorAll('.stat-filter').forEach(box =>
+    box.classList.toggle('active', box.dataset.quality === quality));
+
   displayMovies(filtered);
+}
+
+// Kept for anything still calling the old name
+function filterMovies() {
+  applyFilters();
 }
 
 function showMovieDetails(title, source) {
