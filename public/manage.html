@@ -178,6 +178,29 @@
       background: #dc2626;
     }
 
+    /* Which media system(s) a title came from */
+    .source-badges {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .source-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 3px;
+      color: #fff;
+    }
+
+    .source-badge.kaleidescape { background: #1d4ed8; }
+    .source-badge.plex         { background: #b8860b; }
+    .source-badge.jellyfin     { background: #7b3fa0; }
+    .source-badge.unknown      { background: #4b5563; }
+
     /* Modal */
     .modal {
       display: none;

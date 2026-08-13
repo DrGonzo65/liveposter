@@ -72,6 +72,23 @@ function bindGridClicks() {
   });
 }
 
+/**
+ * Systems a title came from. The combined view carries every source a merged
+ * title was found in; a single-source view only has the one.
+ */
+function sourceList(movie) {
+  if (Array.isArray(movie.sources) && movie.sources.length) return movie.sources;
+  return movie.source ? [movie.source] : [];
+}
+
+function sourceBadges(movie) {
+  const known = ['kaleidescape', 'plex', 'jellyfin'];
+  return sourceList(movie).map(s => {
+    const cls = known.includes(s) ? s : 'unknown';
+    return `<span class="source-badge ${cls}">${escapeHtml(s)}</span>`;
+  }).join('');
+}
+
 function displayMovies(movies) {
   const grid = document.getElementById('movies-grid');
   bindGridClicks();
@@ -109,6 +126,7 @@ function displayMovies(movies) {
             <span class="badge ${quality.hasTagline ? 'good' : 'bad'}">Tagline</span>
             <span class="badge ${quality.hasRT ? 'good' : 'bad'}">RT</span>
           </div>
+          <div class="source-badges">${sourceBadges(movie)}</div>
         </div>
       </div>
     `;
@@ -178,7 +196,9 @@ function showMovieDetails(title, source) {
     <div class="detail-info">
       <h3>${escapeHtml(movie.title)}</h3>
       <p><strong>Year:</strong> ${movie.year || 'Unknown'}</p>
-      <p><strong>Source:</strong> ${movie.source}</p>
+      <p><strong>Source${sourceList(movie).length > 1 ? 's' : ''}:</strong> ${sourceList(movie).join(', ')}${
+        sourceList(movie).length > 1 ? ' <span style="color:#888">(same title in more than one system — shown once)</span>' : ''
+      }</p>
       <p><strong>TMDb ID:</strong> ${movie.tmdbId || 'Not matched'}</p>
       <p><strong>IMDb ID:</strong> ${movie.imdbId || 'N/A'}</p>
       <p><strong>Rating:</strong> ${movie.voteAverage ? `★ ${movie.voteAverage.toFixed(1)}` : 'N/A'}</p>
