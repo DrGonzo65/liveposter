@@ -61,7 +61,7 @@ Add these variables (adjust values for your setup):
 - `OMDB_API_KEY` = `your-omdb-api-key` (optional)
 - `PLEX_URL` = `http://192.168.1.60:32400` (optional)
 - `PLEX_TOKEN` = `your-plex-token` (optional)
-- `JELLYFIN_URL` = `http://192.168.1.60:8096` (optional)
+- `JELLYFIN_URL` = `http://192.168.1.61:8096` (optional)
 - `JELLYFIN_API_KEY` = `your-jellyfin-key` (optional)
 
 4. Click "Apply"

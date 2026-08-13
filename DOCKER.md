@@ -18,7 +18,7 @@ PLEX_URL=http://192.168.1.60:32400
 PLEX_TOKEN=your-plex-token
 
 # Jellyfin Configuration (optional)
-JELLYFIN_URL=http://192.168.1.60:8096
+JELLYFIN_URL=http://192.168.1.61:8096
 JELLYFIN_API_KEY=your-jellyfin-key
 
 # TMDb Configuration
@@ -72,7 +72,7 @@ Add a new container in Unraid's Docker tab with these settings:
 - `KALEIDESCAPE_PORT` = `10000`
 - `PLEX_URL` = `http://192.168.1.60:32400` (optional)
 - `PLEX_TOKEN` = `your-token` (optional)
-- `JELLYFIN_URL` = `http://192.168.1.60:8096` (optional)
+- `JELLYFIN_URL` = `http://192.168.1.61:8096` (optional)
 - `JELLYFIN_API_KEY` = `your-key` (optional)
 - `TMDB_API_KEY` = `your-key`
 - `OMDB_API_KEY` = `your-key` (optional)

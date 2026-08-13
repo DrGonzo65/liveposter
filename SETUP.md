@@ -190,7 +190,7 @@ configured library into one slideshow.
 4. Copy the key
 
 ```bash
-JELLYFIN_URL=http://192.168.1.60:8096
+JELLYFIN_URL=http://192.168.1.61:8096
 JELLYFIN_API_KEY=your_key_here
 ```
 
@@ -206,7 +206,7 @@ Include the port, and no trailing slash.
    <https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/>
 
 ```bash
-PLEX_URL=http://192.168.1.61:32400
+PLEX_URL=http://192.168.1.60:32400
 PLEX_TOKEN=your_token_here
 ```
 

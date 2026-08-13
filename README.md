@@ -63,16 +63,16 @@ TMDB_READ_TOKEN=your_tmdb_read_token_here
 
 # Kaleidescape - PLAYER_HOST reports what's playing; SERVER_HOST holds the movies.
 # Leave SERVER_HOST blank on an all-in-one system such as a Strato V.
-KALEIDESCAPE_PLAYER_HOST=192.168.1.100
+KALEIDESCAPE_PLAYER_HOST=192.168.1.50
 KALEIDESCAPE_PORT=10000
 KALEIDESCAPE_SERVER_HOST=
 
 # Plex Configuration
-PLEX_URL=http://192.168.1.101:32400
+PLEX_URL=http://192.168.1.60:32400
 PLEX_TOKEN=your_plex_token_here
 
 # Jellyfin Configuration
-JELLYFIN_URL=http://192.168.1.102:8096
+JELLYFIN_URL=http://192.168.1.61:8096
 JELLYFIN_API_KEY=your_jellyfin_api_key_here
 
 # Polling interval in milliseconds (default: 10000 = 10 seconds)

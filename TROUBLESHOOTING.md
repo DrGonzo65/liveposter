@@ -16,7 +16,7 @@
 
 Example valid URLs:
 ```
-PLEX_URL=http://192.168.1.101:32400
+PLEX_URL=http://192.168.1.60:32400
 PLEX_URL=http://localhost:32400
 PLEX_URL=https://plex.example.com:32400
 ```
@@ -44,7 +44,7 @@ PLEX_URL=https://plex.example.com:32400
 2. Check that the Jellyfin server is running
 3. Verify the IP address is reachable:
    ```bash
-   ping 192.168.1.60
+   ping 192.168.1.61
    ```
 4. Check firewall rules aren't blocking port 8096
 5. Make sure you're on the same network as the Jellyfin server
@@ -90,7 +90,7 @@ PLEX_URL=https://plex.example.com:32400
 3. Check that the player is powered on
 4. Ping the player to verify network connectivity:
    ```bash
-   ping 192.168.1.51
+   ping 192.168.1.50
    ```
 5. Verify control protocol is enabled on the player
 
@@ -149,17 +149,17 @@ In `lib/kaleidescape.js`, uncomment debug lines to see all protocol responses.
 
 Test Plex connection:
 ```bash
-curl http://192.168.1.101:32400/status/sessions?X-Plex-Token=YOUR_TOKEN
+curl http://192.168.1.60:32400/status/sessions?X-Plex-Token=YOUR_TOKEN
 ```
 
 Test Jellyfin connection:
 ```bash
-curl http://192.168.1.60:8096/System/Info?api_key=YOUR_API_KEY
+curl http://192.168.1.61:8096/System/Info?api_key=YOUR_API_KEY
 ```
 
 Test Kaleidescape connection:
 ```bash
-telnet 192.168.1.51 10000
+telnet 192.168.1.50 10000
 # Then type: 01
 # Press Enter
 # Should see device info response
