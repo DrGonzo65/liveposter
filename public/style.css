@@ -339,11 +339,12 @@ body {
   backdrop-filter: blur(10px);
 }
 
-/* Fade transitions */
+/* Fade transitions.
+   Only fade-out exists on purpose. A matching .fade-in rule used to sit below
+   this one with the same specificity and !important, and because the script
+   never removed it, it silently won every subsequent fade-out - the slide
+   stopped fading at all and each poster swapped in as a hard cut. Fading in is
+   simply the absence of fade-out. */
 .fade-out {
   opacity: 0 !important;
-}
-
-.fade-in {
-  opacity: 1 !important;
 }

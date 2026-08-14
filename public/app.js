@@ -8,6 +8,7 @@ class LivePoster {
     this.checkInterval = null;
     this.isTransitioning = false;
     this.clientLoadTime = Date.now();
+    this.fadeMs = 800;   // replaced with the real CSS duration once the DOM is up
 
     // DOM elements
     this.elements = {
@@ -46,6 +47,10 @@ class LivePoster {
       // Hide loading screen
       this.elements.loading.classList.add('hidden');
       this.elements.posterContainer.classList.add('visible');
+
+      // Take the fade length from the stylesheet so the two can't drift apart
+      const declared = parseFloat(getComputedStyle(this.elements.posterContainer).transitionDuration);
+      if (declared > 0) this.fadeMs = declared * 1000;
 
       // Start checking for playback
       this.startChecking();
@@ -272,63 +277,98 @@ class LivePoster {
     }
   }
 
+  /**
+   * Fade the slide out and resolve when it has actually finished.
+   *
+   * The old code slept 500ms against an 800ms CSS transition, so the slide was
+   * still a quarter visible when the next poster was swapped in.
+   */
+  fadeOut() {
+    const el = this.elements.posterContainer;
+
+    return new Promise((resolve) => {
+      if (getComputedStyle(el).opacity === '0') {
+        el.classList.add('fade-out');
+        return resolve();
+      }
+
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        el.removeEventListener('transitionend', onEnd);
+        clearTimeout(timer);
+        resolve();
+      };
+
+      const onEnd = (event) => {
+        if (event.propertyName === 'opacity') finish();
+      };
+
+      el.addEventListener('transitionend', onEnd);
+      // transitionend never fires in a background tab, so don't rely on it alone
+      const timer = setTimeout(finish, this.fadeMs + 250);
+
+      el.classList.add('fade-out');
+    });
+  }
+
+  fadeIn() {
+    // Only ever toggle fade-out. Adding a competing fade-in class left it stuck
+    // on the element, and since it is declared after fade-out with the same
+    // specificity and !important, every later fade-out was cancelled out.
+    this.elements.posterContainer.classList.remove('fade-out');
+  }
+
   async displayContent(content) {
     if (this.isTransitioning) return;
 
     this.isTransitioning = true;
 
-    // Fade out
-    this.elements.posterContainer.classList.add('fade-out');
+    try {
+      // Update content - prioritize Kaleidescape hi-res, TMDb original, then others
+      const posterUrl = content.coverUrl || content.posterUrlLarge || content.posterUrl || content.thumb || content.art;
+      const backdropUrl = content.backdropUrl || content.art || content.backdrop;
 
-    // Wait for fade
-    await this.sleep(500);
+      // Fetch artwork while the current slide fades out so the two overlap.
+      // Failures resolve rather than reject - a missing backdrop shouldn't
+      // block the title from changing.
+      const artworkReady = Promise.all([
+        posterUrl ? this.loadImage(posterUrl).catch(err => console.error('Poster failed to load:', err.message)) : null,
+        backdropUrl ? this.loadImage(backdropUrl).catch(err => console.error('Backdrop failed to load:', err.message)) : null
+      ]);
 
-    // Update content - prioritize Kaleidescape hi-res, TMDb original, then others
-    const posterUrl = content.coverUrl || content.posterUrlLarge || content.posterUrl || content.thumb || content.art;
-    const backdropUrl = content.backdropUrl || content.art || content.backdrop;
+      await Promise.all([artworkReady, this.fadeOut()]);
 
-    // Load images in parallel and wait for both
-    const imagePromises = [];
+      // Invisible now, so artwork and text can be swapped in the same breath.
+      // Both are already in the browser cache, so this paints as one change.
+      if (posterUrl) {
+        this.elements.posterImage.src = posterUrl;
+        this.elements.posterImage.alt = content.title || 'Movie Poster';
+      }
 
-    if (posterUrl) {
-      const posterPromise = this.loadImage(posterUrl)
-        .then(() => {
-          this.elements.posterImage.src = posterUrl;
-          this.elements.posterImage.alt = content.title || 'Movie Poster';
-          // Wait for the actual DOM element to load
-          return new Promise((resolve) => {
-            if (this.elements.posterImage.complete) {
-              resolve();
-            } else {
-              this.elements.posterImage.onload = resolve;
-              this.elements.posterImage.onerror = resolve; // Resolve even on error
-            }
-          });
-        })
-        .catch((error) => {
-          console.error('Error loading poster image:', error);
-          this.elements.posterImage.src = posterUrl;
-          this.elements.posterImage.alt = content.title || 'Movie Poster';
-        });
-      imagePromises.push(posterPromise);
+      if (backdropUrl) {
+        this.elements.backdrop.style.backgroundImage = `url(${backdropUrl})`;
+      }
+
+      this.updateText(content);
+
+      // Guarantee the new poster is decoded before it becomes visible
+      if (posterUrl && this.elements.posterImage.decode) {
+        try {
+          await this.elements.posterImage.decode();
+        } catch (error) {
+          // Decode rejects if the src changed again; the fade-in is still fine
+        }
+      }
+
+      this.fadeIn();
+    } finally {
+      this.isTransitioning = false;
     }
+  }
 
-    if (backdropUrl) {
-      const backdropPromise = this.loadImage(backdropUrl)
-        .then(() => {
-          this.elements.backdrop.style.backgroundImage = `url(${backdropUrl})`;
-        })
-        .catch((error) => {
-          console.error('Error loading backdrop image:', error);
-          this.elements.backdrop.style.backgroundImage = `url(${backdropUrl})`;
-        });
-      imagePromises.push(backdropPromise);
-    }
-
-    // Wait for all images to be fully loaded before updating text
-    await Promise.all(imagePromises);
-
-    // Update text content (only after images are loaded)
+  updateText(content) {
     this.elements.title.textContent = this.getDisplayTitle(content);
 
     // Extract and display tagline (first sentence or short version of overview)
@@ -363,12 +403,6 @@ class LivePoster {
     } else {
       this.elements.source.textContent = source.toUpperCase();
     }
-
-    // Fade in
-    this.elements.posterContainer.classList.remove('fade-out');
-    this.elements.posterContainer.classList.add('fade-in');
-
-    this.isTransitioning = false;
   }
 
   decodeHtmlEntities(text) {
